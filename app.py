@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class YOLOGradioApp:
-    def __init__(self, litserve_url: str = "http://localhost:8000"):
+    def __init__(self, litserve_url: str = "http://0.0.0.0:8000"):
         self.litserve_url = litserve_url.rstrip('/')
         self.colors = [
             "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4", "#FFEAA7",
@@ -225,7 +225,7 @@ class YOLOGradioApp:
         
         return interface
 
-def create_app(litserve_url: str = "http://localhost:8000", share: bool = False, port: int = 7860):
+def create_app(litserve_url: str = "http://0.0.0.0:8000", share: bool = False, port: int = 7860):
     """Create and launch the Gradio app"""
     app = YOLOGradioApp(litserve_url)
     interface = app.create_interface()
@@ -236,7 +236,7 @@ if __name__ == "__main__":
     import argparse
     
     parser = argparse.ArgumentParser(description="YOLOv11 Gradio Frontend")
-    parser.add_argument("--litserve-url", default="http://localhost:8000", 
+    parser.add_argument("--litserve-url", default="http://0.0.0.0:8000", 
                        help="URL of the LitServe backend")
     parser.add_argument("--port", type=int, default=7860, help="Port for Gradio app")
     parser.add_argument("--share", action="store_true", help="Create public Gradio link")

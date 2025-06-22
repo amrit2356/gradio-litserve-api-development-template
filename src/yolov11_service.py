@@ -131,7 +131,7 @@ def create_server(host: str = "0.0.0.0", port: int = 8000, workers: int = 1):
         accelerator="auto",  # Will use GPU if available, else CPU
         workers_per_device=workers,
         timeout=30,  # 30 second timeout
-        max_batch_size=4,  # Process up to 4 images in a batch
+        max_batch_size=1,  # Process up to 4 images in a batch
         batch_timeout=0.1,  # 100ms batch timeout for low latency
     )
     
