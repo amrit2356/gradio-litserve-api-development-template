@@ -1,0 +1,68 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  yolo-litserve:
+    build:
+      context: .
+      dockerfile: Dockerfile_cpu.Dockerfile
+    container_name: yolo-litserve
+    ports:
+      - "8000:8000"
+    environment:
+      - CUDA_VISIBLE_DEVICES=0  # Set to empty string "" to use CPU only
+    volumes:
+      - ./models:/app/models  # Mount local models directory
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # Uncomment for GPU support
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  yolo-gradio:
+    build:
+      context: .
+      dockerfile: Dockerfile.gradio
+    container_name: yolo-gradio
+    ports:
+      - "7860:7860"
+    environment:
+      - LITSERVE_URL=http://yolo-litserve:8000
+    depends_on:
+      yolo-litserve:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://0.0.0.0:7860"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  default:
+    driver: bridge
+
+# For development with GPU support, create docker-compose.gpu.yml:
+# services:
+#   yolo-litserve:
+#     extends:
+#       file: docker-compose.yml
+#       service: yolo-litserve
+#     deploy:
+#       resources:
+#         reservations:
+#           devices:
+#             - driver: nvidia
+#               count: 1
+#               capabilities: [gpu]
