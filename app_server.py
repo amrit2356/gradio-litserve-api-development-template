@@ -30,7 +30,7 @@ class YOLOv11Application:
         self.mode = None
         self.config = get_config()
         
-        # Validate configuration on startup
+        # Validate configuration on startupx
         validation_results = validate_settings()
         if not validation_results['valid']:
             logger.error(f"Configuration validation failed: {validation_results['errors']}")
@@ -43,7 +43,7 @@ class YOLOv11Application:
     
     def parse_arguments(self) -> argparse.Namespace:
         """
-        Parse command line arguments (utility commands only)
+        Parse command line arguments
         
         Returns:
             Parsed arguments
@@ -52,28 +52,89 @@ class YOLOv11Application:
             description="YOLOv11 API with RunPod and LitServe support",
             formatter_class=argparse.RawDescriptionHelpFormatter,
             epilog="""
-                    Examples:
-                    # Run with default configuration
-                    python main.py
-                    
-                    # Create test input for RunPod
-                    python main.py --create-test
-                    
-                    # Check environment
-                    python main.py --check-env
-                    
-                    # Validate configuration
-                    python main.py --validate-config
-                    
-                    # Show current configuration
-                    python main.py --show-config
-                    
-                    Note: All runtime configuration is managed through config.yaml files.
-                    Edit src/utils/config/config.yaml to modify application settings.
+Examples:
+  # Run with LitServe
+  python main.py --mode litserve --host 0.0.0.0 --port 8000
+  
+  # Run with RunPod
+  python main.py --mode runpod --model-size s
+  
+  # Create test input for RunPod
+  python main.py --create-test
+  
+  # Check environment
+  python main.py --check-env
+  
+  # Validate configuration
+  python main.py --validate-config
             """
         )
         
-        # Utility commands only
+        # Mode selection
+        parser.add_argument(
+            "--mode",
+            choices=["runpod", "litserve"],
+            default=None,
+            help="Deployment mode: runpod or litserve"
+        )
+        
+        # Model configuration
+        parser.add_argument(
+            "--model-size",
+            choices=settings.model.available_sizes,
+            default=None,
+            help="YOLO model size"
+        )
+        
+        parser.add_argument(
+            "--device",
+            default=None,
+            help="Device to run inference on (auto, cpu, cuda)"
+        )
+        
+        # LitServe specific arguments
+        parser.add_argument(
+            "--host",
+            default=None,
+            help="Host to bind to (LitServe only)"
+        )
+        
+        parser.add_argument(
+            "--port",
+            type=int,
+            default=None,
+            help="Port to bind to (LitServe only)"
+        )
+        
+        parser.add_argument(
+            "--workers",
+            type=int,
+            default=None,
+            help="Number of workers per device (LitServe only)"
+        )
+        
+        parser.add_argument(
+            "--timeout",
+            type=int,
+            default=None,
+            help="Request timeout in seconds (LitServe only)"
+        )
+        
+        # Configuration options
+        parser.add_argument(
+            "--config-file",
+            default=None,
+            help="Path to configuration file"
+        )
+        
+        parser.add_argument(
+            "--environment",
+            choices=["development", "production", "testing"],
+            default=None,
+            help="Environment mode"
+        )
+        
+        # Utility commands
         parser.add_argument(
             "--create-test",
             action="store_true",
@@ -107,20 +168,43 @@ class YOLOv11Application:
         parser.add_argument(
             "--debug",
             action="store_true",
-            help="Enable debug mode (overrides config)"
+            help="Enable debug mode"
         )
         
         return parser.parse_args()
     
-    def setup_debug_mode(self, enable_debug: bool) -> None:
+    def setup_from_args(self, args: argparse.Namespace) -> None:
         """
-        Setup debug mode if requested
+        Setup configuration from command line arguments
         
         Args:
-            enable_debug: Whether to enable debug mode
+            args: Parsed command line arguments
         """
-        if enable_debug:
-            logger.info("Debug mode enabled via command line")
+        # Set environment if provided
+        if args.environment:
+            settings.set_environment(args.environment)
+        
+        # Override configuration with command line arguments
+        if args.model_size:
+            settings.model.set('default_size', args.model_size)
+        
+        if args.device:
+            settings.model.set('device.preferred', args.device)
+        
+        if args.host:
+            settings.litserve.set('server.host', args.host)
+        
+        if args.port:
+            settings.litserve.set('server.port', args.port)
+        
+        if args.workers:
+            settings.litserve.set('server.workers_per_device', args.workers)
+        
+        if args.timeout:
+            settings.litserve.set('server.timeout', args.timeout)
+        
+        # Enable debug mode if requested
+        if args.debug:
             settings.development.set('debug_mode', True)
             from src.utils.log.logger import LoggerManager
             LoggerManager().configure_debug_logging(True)
@@ -163,9 +247,12 @@ class YOLOv11Application:
         
         return env_info
     
-    def run_litserve_mode(self) -> None:
+    def run_litserve_mode(self, args: argparse.Namespace) -> None:
         """
         Run application in LitServe mode
+        
+        Args:
+            args: Parsed command line arguments
         """
         try:
             model_size = settings.model.default_size
@@ -176,12 +263,6 @@ class YOLOv11Application:
             
             # Get configuration from settings
             litserve_config = settings.litserve
-            
-            logger.info(f"LitServe configuration:")
-            logger.info(f"  Host: {litserve_config.host}")
-            logger.info(f"  Port: {litserve_config.port}")
-            logger.info(f"  Workers per device: {litserve_config.workers_per_device}")
-            logger.info(f"  Timeout: {litserve_config.timeout}")
             
             # Run server
             manager.run_server(
@@ -195,22 +276,18 @@ class YOLOv11Application:
             logger.error(f"LitServe mode failed: {str(e)}")
             raise
     
-    def run_runpod_mode(self) -> None:
+    def run_runpod_mode(self, args: argparse.Namespace) -> None:
         """
         Run application in RunPod mode
+        
+        Args:
+            args: Parsed command line arguments
         """
         try:
             model_size = settings.model.default_size
             device = settings.model.device_preferred
             
             logger.info(f"Starting RunPod mode with model size: {model_size}, device: {device}")
-            
-            # Log RunPod configuration
-            runpod_config = settings.runpod
-            logger.info(f"RunPod configuration:")
-            logger.info(f"  Handler timeout: {runpod_config.handler_timeout}")
-            logger.info(f"  Memory limit: {runpod_config.memory_limit}")
-            logger.info(f"  Concurrent requests: {runpod_config.concurrent_requests}")
             
             # Create RunPod manager
             manager = YOLOv11RunPodManager(
@@ -230,7 +307,7 @@ class YOLOv11Application:
         try:
             filename = settings.runpod.test_input_filename
             output_file = create_test_input(filename)
-            print(f"✅ Created test input file: {output_file}")
+            logger.info(f"✅ Created test input file: {output_file}")
             
         except Exception as e:
             logger.error(f"Failed to create test input: {str(e)}")
@@ -241,18 +318,18 @@ class YOLOv11Application:
         try:
             results = validate_runpod_environment()
             
-            print("🔍 RunPod Environment Validation:")
-            print(f"Is RunPod Environment: {'✅' if results['is_runpod_environment'] else '❌'}")
+            logger.info("🔍 RunPod Environment Validation:")
+            logger.info(f"Is RunPod Environment: {'✅' if results['is_runpod_environment'] else '❌'}")
             
             if results['environment_variables']:
-                print("\nEnvironment Variables:")
+                logger.info("\nEnvironment Variables:")
                 for var, value in results['environment_variables'].items():
-                    print(f"  {var}: {value}")
+                    logger.info(f"  {var}: {value}")
             
             if results['missing_variables']:
-                print("\nMissing Variables:")
+                logger.info("\nMissing Variables:")
                 for var in results['missing_variables']:
-                    print(f"  ❌ {var}")
+                    logger.info(f"  ❌ {var}")
             
         except Exception as e:
             logger.error(f"Environment validation failed: {str(e)}")
@@ -263,21 +340,21 @@ class YOLOv11Application:
         try:
             results = validate_settings()
             
-            print("⚙️  Configuration Validation:")
-            print(f"Valid: {'✅' if results['valid'] else '❌'}")
+            logger.info("⚙️  Configuration Validation:")
+            logger.info(f"Valid: {'✅' if results['valid'] else '❌'}")
             
             if results['errors']:
-                print("\nErrors:")
+                logger.info("\nErrors:")
                 for error in results['errors']:
-                    print(f"  ❌ {error}")
+                    logger.info(f"  ❌ {error}")
             
             if results['warnings']:
-                print("\nWarnings:")
+                logger.info("\nWarnings:")
                 for warning in results['warnings']:
-                    print(f"  ⚠️  {warning}")
+                    logger.info(f"  ⚠️  {warning}")
             
             if results['valid']:
-                print("\n✅ Configuration is valid!")
+                logger.info("\n✅ Configuration is valid!")
             
         except Exception as e:
             logger.error(f"Configuration validation failed: {str(e)}")
@@ -286,57 +363,22 @@ class YOLOv11Application:
     def show_configuration(self) -> None:
         """Show current configuration"""
         try:
-            print("📋 Current Configuration:")
-            print(f"Environment: {settings.get_environment()}")
-            print(f"App Name: {settings.app.name}")
-            print(f"App Version: {settings.app.version}")
-            print("")
+            logger.info("📋 Current Configuration:")
+            logger.info(f"Environment: {settings.get_environment()}")
+            logger.info(f"App Name: {settings.app.name}")
+            logger.info(f"App Version: {settings.app.version}")
+            logger.info(f"Model Size: {settings.model.default_size}")
+            logger.info(f"Device: {settings.model.device_preferred}")
+            logger.info(f"LitServe Host: {settings.litserve.host}")
+            logger.info(f"LitServe Port: {settings.litserve.port}")
+            logger.info(f"Debug Mode: {settings.development.debug_mode}")
             
-            print("🤖 Model Configuration:")
-            print(f"Model Size: {settings.model.default_size}")
-            print(f"Device: {settings.model.device_preferred}")
-            print(f"Confidence Threshold: {settings.model.confidence_threshold}")
-            print(f"IoU Threshold: {settings.model.iou_threshold}")
-            print("")
-            
-            print("🖥️  LitServe Configuration:")
-            print(f"Host: {settings.litserve.host}")
-            print(f"Port: {settings.litserve.port}")
-            print(f"Workers per Device: {settings.litserve.workers_per_device}")
-            print(f"Timeout: {settings.litserve.timeout}")
-            print("")
-            
-            print("☁️  RunPod Configuration:")
-            print(f"Handler Timeout: {settings.runpod.handler_timeout}")
-            print(f"Memory Limit: {settings.runpod.memory_limit}")
-            print(f"Concurrent Requests: {settings.runpod.concurrent_requests}")
-            print("")
-            
-            print("🔧 Development Configuration:")
-            print(f"Debug Mode: {settings.development.debug_mode}")
-            print(f"Mock Model: {settings.development.mock_model}")
-            print(f"Auto Reload Config: {settings.development.auto_reload_config}")
-            print("")
-            
-            print("🚀 Feature Flags:")
-            print(f"Batch Processing: {settings.features.enable_batch_processing}")
-            print(f"Async Processing: {settings.features.enable_async_processing}")
-            print(f"Model Caching: {settings.features.enable_model_caching}")
-            print(f"Health Checks: {settings.features.enable_health_checks}")
-            print(f"Metrics Collection: {settings.features.enable_metrics_collection}")
-            print("")
-            
-            print("🛡️  Security Configuration:")
-            print(f"Input Validation: {settings.security.enable_input_validation}")
-            print(f"Rate Limiting: {settings.security.rate_limiting_enabled}")
-            print(f"Max Upload Size: {settings.security.max_upload_size} bytes")
-            print("")
-            
-            print("📊 Performance Configuration:")
-            print(f"Enable Profiling: {settings.performance.enable_profiling}")
-            print(f"Enable Metrics: {settings.performance.enable_metrics}")
-            print(f"Mixed Precision: {settings.performance.enable_mixed_precision}")
-            print(f"Max Workers: {settings.performance.max_workers}")
+            # Show feature flags
+            logger.info(f"\n🚀 Feature Flags:")
+            logger.info(f"Batch Processing: {settings.features.enable_batch_processing}")
+            logger.info(f"Async Processing: {settings.features.enable_async_processing}")
+            logger.info(f"Model Caching: {settings.features.enable_model_caching}")
+            logger.info(f"Health Checks: {settings.features.enable_health_checks}")
             
         except Exception as e:
             logger.error(f"Failed to show configuration: {str(e)}")
@@ -347,62 +389,57 @@ class YOLOv11Application:
         try:
             env_info = self.check_environment()
             
-            print("🖥️  System Information:")
-            print(f"Platform: {env_info['system']['platform']}")
-            print(f"Python: {env_info['system']['python_version']}")
-            print(f"Architecture: {env_info['system']['architecture']}")
+            logger.info("🖥️  System Information:")
+            logger.info(f"Platform: {env_info['system']['platform']}")
+            logger.info(f"Python: {env_info['system']['python_version']}")
+            logger.info(f"Architecture: {env_info['system']['architecture']}")
             
-            print("\n🔥 PyTorch Information:")
-            print(f"Version: {env_info['torch']['version']}")
-            print(f"CUDA Available: {'✅' if env_info['torch']['cuda_available'] else '❌'}")
+            logger.info("\n🔥 PyTorch Information:")
+            logger.info(f"Version: {env_info['torch']['version']}")
+            logger.info(f"CUDA Available: {'✅' if env_info['torch']['cuda_available'] else '❌'}")
             if env_info['torch']['cuda_available']:
-                print(f"CUDA Version: {env_info['torch']['cuda_version']}")
-                print(f"GPU Count: {env_info['torch']['device_count']}")
+                logger.info(f"CUDA Version: {env_info['torch']['cuda_version']}")
+                logger.info(f"GPU Count: {env_info['torch']['device_count']}")
             
-            print("\n🌍 Environment Variables:")
-            for var, value in env_info['environment_variables'].items():
-                if value:
-                    print(f"{var}: {value}")
-                else:
-                    print(f"{var}: Not set")
-            
-            print("\n⚙️  Current Configuration:")
-            print(f"Environment: {env_info['configuration']['current_environment']}")
-            print(f"Model Size: {env_info['configuration']['model_size']}")
-            print(f"Device: {env_info['configuration']['device']}")
-            print(f"Debug Mode: {env_info['configuration']['debug_mode']}")
+            logger.info("\n⚙️  Configuration:")
+            logger.info(f"Environment: {env_info['configuration']['current_environment']}")
+            logger.info(f"Model Size: {env_info['configuration']['model_size']}")
+            logger.info(f"Device: {env_info['configuration']['device']}")
+            logger.info(f"Debug Mode: {env_info['configuration']['debug_mode']}")
             
         except Exception as e:
             logger.error(f"System check failed: {str(e)}")
             raise
     
-    def determine_deployment_mode(self) -> str:
+    def determine_deployment_mode(self, args: argparse.Namespace) -> str:
         """
-        Determine deployment mode based on environment and configuration
+        Determine deployment mode based on arguments and environment
         
+        Args:
+            args: Parsed command line arguments
+            
         Returns:
             Deployment mode ('runpod' or 'litserve')
         """
-        # Check environment variables first
+        # Check explicit mode argument
+        if args.mode:
+            return args.mode
+        
+        # Check environment variables
         if os.getenv("RUNPOD_POD_ID"):
-            logger.info("Detected RunPod environment via RUNPOD_POD_ID")
             return "runpod"
         
-        # Check configuration setting
-        # You can add a deployment mode setting to config.yaml if needed
-        default_mode = self.config.get('app.default_deployment_mode', 'litserve')
-        logger.info(f"Using default deployment mode: {default_mode}")
-        
-        return default_mode
+        # Default to litserve
+        return "litserve"
     
     def run(self) -> None:
         """Main application entry point"""
         try:
-            # Parse arguments (utility commands only)
+            # Parse arguments
             args = self.parse_arguments()
             
-            # Setup debug mode if requested
-            self.setup_debug_mode(args.debug)
+            # Setup configuration from arguments
+            self.setup_from_args(args)
             
             # Handle utility commands
             if args.create_test:
@@ -425,22 +462,14 @@ class YOLOv11Application:
                 self.show_configuration()
                 return
             
-            # Log startup information
-            logger.info("="*50)
-            logger.info(f"🚀 Starting {settings.app.name} v{settings.app.version}")
-            logger.info(f"Environment: {settings.get_environment()}")
-            logger.info(f"Model Size: {settings.model.default_size}")
-            logger.info(f"Device: {settings.model.device_preferred}")
-            logger.info("="*50)
-            
             # Determine deployment mode
-            mode = self.determine_deployment_mode()
+            mode = self.determine_deployment_mode(args)
             
             # Run application
             if mode == "runpod":
-                self.run_runpod_mode()
+                self.run_runpod_mode(args)
             else:
-                self.run_litserve_mode()
+                self.run_litserve_mode(args)
                 
         except KeyboardInterrupt:
             logger.info("Application interrupted by user")
@@ -449,7 +478,6 @@ class YOLOv11Application:
             sys.exit(1)
         finally:
             # Cleanup
-            logger.info("Shutting down application...")
             from src.utils.log.logger import LoggerManager
             LoggerManager().shutdown()
 
