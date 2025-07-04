@@ -3,7 +3,7 @@ import time
 from typing import Dict, Any, List, Optional
 from PIL import Image
 
-from src.models.yolo_pipeline import YOLOModel
+from src.pipelines.yolo import YOLOModel
 from src.utils.io.image_processor import ImageProcessor
 from src.utils.io.response_formatter import ResponseFormatter
 from src.utils.config.settings import get_settings
