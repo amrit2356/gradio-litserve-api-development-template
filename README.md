@@ -1,59 +1,92 @@
-# 🔍 Gradio-litserve ML Deployment Template
+# 🔍 AI/ML Project Deployment Template
 
-> **Scalable, Production-Ready Object Detection Pipeline with Gradio Frontend and LitServe Backend**
+> **Scalable, Production-Ready YOLOv11 Object Detection Pipeline with Gradio Frontend and LitServe Backend**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
 [![LitServe](https://img.shields.io/badge/LitServe-Backend-green.svg)](https://github.com/Lightning-AI/litserve)
 [![Gradio](https://img.shields.io/badge/Gradio-Frontend-orange.svg)](https://gradio.app)
+[![RunPod](https://img.shields.io/badge/RunPod-Serverless-purple.svg)](https://runpod.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## 📋 Table of Contents
 
 - [🎯 Purpose](#-purpose)
+- [🏗️ Project Structure](#-project-structure)
 - [🚀 Quick Start](#-quick-start)
 - [📦 Installation](#-installation)
-- [🧪 Testing](#-testing)
+- [🔧 Configuration](#-configuration)
+- [🌐 Usage Examples](#-usage-examples)
 - [🚢 Deployment](#-deployment)
 - [📖 API Documentation](#-api-documentation)
-- [🔧 Configuration](#-configuration)
+- [🧪 Testing](#-testing)
 - [🐛 Troubleshooting](#-troubleshooting)
 - [🤝 Contributing](#-contributing)
 
 ## 🎯 Purpose
 
-This template provides a **production-ready foundation** for deploying machine learning models with a clean separation between frontend and backend services. It demonstrates best practices for:
+This template provides a **production-ready foundation** for deploying YOLOv11 object detection models with clean separation between frontend and backend services. It demonstrates best practices for:
 
 ### ✨ **Key Features**
-- 🔄 **Scalable Architecture**: Independent frontend and backend services
-- 🐳 **Containerized Deployment**: Docker and Docker Compose ready
-- ⚡ **High Performance**: Optimized for sub-second inference
-- 🎨 **User-Friendly Interface**: Modern Gradio web UI
-- 🔧 **Production Ready**: Health checks, logging, and monitoring
-- 🔀 **Multi-Environment**: Local development and production deployment
-- 📊 **Real-Time Processing**: Batching and async processing support
+- 🔄 **Modular Architecture**: Separate UI and server applications with `app_ui.py` and `app_server.py`
+- 🐳 **Multi-Platform Support**: LitServe for local/cloud deployment, RunPod for serverless
+- ⚡ **High Performance**: Async processing with configurable batching and workers
+- 🎨 **Modern UI**: Advanced Gradio interface with backend management
+- 🔧 **Production Ready**: Comprehensive logging, health checks, and monitoring
+- ⚙️ **Flexible Configuration**: YAML-based settings with environment overrides
+- 📊 **Real-Time Processing**: Optimized inference pipeline with response formatting
 
 ### 🏗️ **Architecture**
 ```mermaid
-graph LR
-    A[👤 User] --> B[🎨 Gradio Frontend]
-    B --> C[🔗 HTTP/REST API]
-    C --> D[⚡ LitServe Backend]
-    D --> E[🤖 YOLOv11 Model]
-    E --> D
-    D --> C
-    C --> B
-    B --> A
+graph TB
+    subgraph "Frontend Layer"
+        A[👤 User] --> B[🎨 Gradio UI<br/>app_ui.py]
+        B --> C[Backend Manager<br/>Multiple Backends]
+    end
+    
+    subgraph "Backend Layer"
+        C --> D[⚡ LitServe API<br/>app_server.py]
+        C --> E[☁️ RunPod Serverless<br/>app_server.py]
+    end
+    
+    subgraph "Service Layer"
+        D --> F[🔧 YOLO Service]
+        E --> F
+        F --> G[🤖 YOLOv11 Model<br/>Pipeline]
+    end
+    
+    subgraph "Infrastructure"
+        G --> H[📝 Configuration<br/>YAML + Environment]
+        G --> I[📊 Logging & Monitoring]
+        G --> J[🗄️ Model Cache]
+    end
 ```
 
 ### 🎯 **Use Cases**
-- **Object Detection Services**: Real-time image analysis
-- **ML Model Prototyping**: Rapid model deployment and testing
-- **Educational Projects**: Learning ML deployment patterns
-- **Production APIs**: Scalable model serving infrastructure
-- **Template Foundation**: Base for complex ML pipelines
+- **Real-time Object Detection**: Live image analysis with sub-second response
+- **Scalable API Services**: Production-ready inference endpoints
+- **Educational Projects**: Learn modern ML deployment patterns
+- **Rapid Prototyping**: Quick model deployment and testing
+- **Multi-Cloud Deployment**: Support for various cloud providers
 
 ---
+
+## 🏗️ Project Structure
+
+```
+├── app_ui.py
+├── app_server.py
+├── Dockerfile.litserve
+├── Dockerfile.gradio
+├── k8s/
+├── requirements.litserve.txt
+├── requirements.gradio.txt
+├── .env.development
+├── .env.staging
+├── .env.production
+├── setup_and_run.sh
+└── README.md
+```
 
 ## 🚀 Quick Start
 
