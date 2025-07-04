@@ -5,8 +5,9 @@ app:
   name: "YOLOv11 API"
   version: "1.0.0"
   description: "YOLO object detection API with LitServe and RunPod support"
-  author: "Your Name"
-  contact: "your.email@example.com"
+  author: "Amritanshu Pandey"
+  contact: "amritanshu.pandey@flamapp.com"
+  default_deployment_mode: "runpod"  # Default deployment mode: litserve or runpod
 
 # Model configuration
 model:
