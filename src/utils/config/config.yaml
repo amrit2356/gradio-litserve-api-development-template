@@ -7,7 +7,7 @@ app:
   description: "YOLO object detection API with LitServe and RunPod support"
   author: "Amritanshu Pandey"
   contact: "amritanshu.pandey@flamapp.com"
-  default_deployment_mode: "runpod"  # Default deployment mode: litserve or runpod
+  default_deployment_mode: "litserve"  # Default deployment mode: litserve or runpod
 
 # Model configuration
 model:
@@ -19,11 +19,11 @@ model:
     - "l"
     - "x"
   model_paths:
-    n: "yolo11n.pt"
-    s: "yolo11s.pt"
-    m: "yolo11m.pt"
-    l: "yolo11l.pt"
-    x: "yolo11x.pt"
+    n: "./models/yolo11n.pt"
+    s: "./models/yolo11s.pt"
+    m: "./models/yolo11m.pt"
+    l: "./models/yolo11l.pt"
+    x: "./models/yolo11x.pt"
   device:
     auto_detect: true
     preferred: "auto"  # auto, cpu, cuda
@@ -180,7 +180,6 @@ security:
 # Paths and directories
 paths:
   models_dir: "./models"
-  cache_dir: "./cache"
   logs_dir: "./logs"
   temp_dir: "./temp"
   data_dir: "./data"

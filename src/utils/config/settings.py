@@ -208,7 +208,7 @@ class ModelSettings(BaseSettings):
     
     def get_model_path(self, size: str) -> str:
         """Get model path for specific size"""
-        return self.model_paths.get(size, f'yolo11{size}.pt')
+        return self.model_paths.get(size, f'./models/yolo11{size}.pt')
 
 class ImageProcessingSettings(BaseSettings):
     """Image processing settings"""

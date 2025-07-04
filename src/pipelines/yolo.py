@@ -56,7 +56,7 @@ class YOLOModel:
         try:
             # Get model path from settings
             model_path = settings.model.get_model_path(self.model_size)
-            
+            print(f"Model path: {model_path}")
             self.model = YOLO(model_path)
             self.model.to(self.device)
             self.model.eval()

@@ -203,7 +203,7 @@ class YOLOv11LitServeManager:
                 self.create_server(workers_per_device=workers_per_device, timeout=timeout)
             
             logger.info(f"Starting LitServe server on {host}:{port}")
-            self.server.run(host=host, port=port)
+            self.server.run(host=host, port=port, generate_client_file=False)
             
         except Exception as e:
             logger.error(f"Failed to run LitServe server: {str(e)}")

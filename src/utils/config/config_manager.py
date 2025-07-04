@@ -282,6 +282,8 @@ class ConfigManager:
                 path_obj = Path(path_value)
                 if not path_obj.exists():
                     validation_results['warnings'].append(f"Path does not exist: {path_value}")
+                    # create the path if it doesn't exist
+                    os.makedirs(path_value, exist_ok=True)
         
         return validation_results
     
