@@ -9,9 +9,9 @@ from dataclasses import dataclass
 @dataclass
 class ConfigPaths:
     """Configuration file paths"""
-    config_yaml: str = "utils/config.yaml"
-    logging_yaml: str = "utils/logging.yaml"
-    config_dir: str = "utils"
+    config_yaml: str = "./src/utils/config/config.yaml"
+    logging_yaml: str = "./src/utils/log/log_config.yaml"
+    config_dir: str = "./src/utils/config"
 
 class ConfigManager:
     """

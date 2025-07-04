@@ -6,7 +6,7 @@ using the ConfigManager singleton.
 
 from typing import Dict, Any, List
 from src.utils.config.config_manager import get_config
-from utils.log.logger import get_logger
+from src.utils.log.logger import get_logger
 
 # Initialize logger
 logger = get_logger(__name__)
