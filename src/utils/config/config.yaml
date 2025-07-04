@@ -5,8 +5,8 @@ app:
   name: "YOLOv11 API"
   version: "1.0.0"
   description: "YOLO object detection API with LitServe and RunPod support"
-  author: "Amritanshu Pandey"
-  contact: "amritanshu.pandey@flamapp.com"
+  author: "Your Name"
+  contact: "your.email@example.com"
   default_deployment_mode: "litserve"  # Default deployment mode: litserve or runpod
 
 # Model configuration
@@ -19,11 +19,11 @@ model:
     - "l"
     - "x"
   model_paths:
-    n: "./models/yolo11n.pt"
-    s: "./models/yolo11s.pt"
-    m: "./models/yolo11m.pt"
-    l: "./models/yolo11l.pt"
-    x: "./models/yolo11x.pt"
+    n: "yolo11n.pt"
+    s: "yolo11s.pt"
+    m: "yolo11m.pt"
+    l: "yolo11l.pt"
+    x: "yolo11x.pt"
   device:
     auto_detect: true
     preferred: "auto"  # auto, cpu, cuda
@@ -180,6 +180,7 @@ security:
 # Paths and directories
 paths:
   models_dir: "./models"
+  cache_dir: "./cache"
   logs_dir: "./logs"
   temp_dir: "./temp"
   data_dir: "./data"
@@ -215,3 +216,263 @@ monitoring:
     prometheus_port: 9090
     enable_grafana: false
     grafana_port: 3000
+
+# Gradio UI configuration
+gradio:
+  # App metadata
+  app:
+    name: "YOLOv11 Object Detection"
+    title: "YOLOv11 Object Detection Interface"
+    description: "Advanced object detection using YOLOv11 with LitServe and RunPod support"
+    version: "1.0.0"
+    author: "Amritanshu Pandey"
+    theme: "soft"
+    favicon_path: null
+    css_path: null
+  
+  # Server configuration
+  server:
+    host: "0.0.0.0"
+    port: 7860
+    share: false
+    debug: false
+    show_api: true
+    show_error: true
+    auth: null
+    auth_message: "Please enter your credentials to access the app"
+    max_threads: 40
+    analytics_enabled: false
+  
+  # Backend configuration
+  backends:
+    litserve:
+      enabled: true
+      name: "LitServe (Live Server)"
+      description: "Real-time inference server"
+      base_url: "http://localhost:8000"
+      endpoints:
+        predict: "/predict"
+        health: "/health"
+        info: "/info"
+      health_check:
+        enabled: true
+        interval: 30
+        timeout: 5
+        retries: 3
+      request_timeout: 30
+      max_concurrent_requests: 10
+      
+    runpod:
+      enabled: false
+      name: "RunPod (Serverless)"
+      description: "Serverless inference with job management"
+      base_url: "https://api.runpod.ai/v2"
+      endpoints:
+        run_sync: "/runsync"
+        run_async: "/run"
+        status: "/status"
+        cancel: "/cancel"
+      api_key: null
+      endpoint_id: null
+      request_timeout: 300
+      polling_interval: 2
+      max_execution_time: 300
+      job_management:
+        enabled: true
+        max_jobs: 100
+        cleanup_interval: 3600
+        persist_jobs: true
+        job_history_file: "./data/job_history.json"
+  
+  # UI Configuration
+  ui:
+    layout: "blocks"
+    theme_settings:
+      primary_color: "#3b82f6"
+      secondary_color: "#64748b"
+      accent_color: "#10b981"
+      background_color: "#f8fafc"
+      text_color: "#1e293b"
+    
+    components:
+      image_upload:
+        label: "Upload Image"
+        sources: ["upload", "webcam", "clipboard"]
+        type: "pil"
+        height: 400
+        width: null
+        interactive: true
+        show_label: true
+        show_download_button: true
+        
+      model_settings:
+        show_model_selector: true
+        show_confidence_slider: true
+        show_iou_slider: true
+        show_max_detections: true
+        show_advanced_options: false
+        
+      output_settings:
+        show_response_format: true
+        show_include_metadata: true
+        show_include_performance: true
+        show_bbox_format: false
+        
+      results_display:
+        show_annotated_image: true
+        show_detection_table: true
+        show_confidence_chart: true
+        show_class_distribution: true
+        show_raw_response: true
+        
+      backend_selector:
+        show_backend_choice: true
+        show_backend_status: true
+        show_health_indicators: true
+        
+      job_management:
+        show_job_queue: true
+        show_job_history: true
+        show_job_controls: true
+        max_display_jobs: 50
+  
+  # Detection configuration
+  detection:
+    confidence_threshold:
+      min: 0.01
+      max: 0.99
+      default: 0.25
+      step: 0.01
+      
+    iou_threshold:
+      min: 0.01
+      max: 0.99
+      default: 0.45
+      step: 0.01
+      
+    max_detections:
+      min: 1
+      max: 1000
+      default: 100
+      step: 1
+      
+    supported_formats:
+      - "jpg"
+      - "jpeg"
+      - "png"
+      - "webp"
+      - "bmp"
+      
+    max_image_size: 10485760
+    min_image_size: 1024
+  
+  # Response formatting
+  response:
+    formats:
+      - "detailed"
+      - "minimal"
+      - "compact"
+    default_format: "detailed"
+    
+    bbox_formats:
+      - "xyxy"
+      - "xywh"
+      - "cxcywh"
+    default_bbox_format: "xyxy"
+    
+    include_metadata: true
+    include_performance: true
+    decimal_precision: 3
+  
+  # Visualization settings
+  visualization:
+    bbox_colors:
+      - "#ff6b6b"
+      - "#4ecdc4"
+      - "#45b7d1"
+      - "#96ceb4"
+      - "#ffeaa7"
+      - "#dda0dd"
+      - "#98d8c8"
+      - "#f7dc6f"
+      - "#bb8fce"
+      - "#85c1e9"
+      
+    bbox_thickness: 2
+    font_size: 12
+    font_color: "#ffffff"
+    label_background_alpha: 0.7
+    show_confidence_in_label: true
+    show_class_colors: true
+    
+    charts:
+      confidence_chart:
+        type: "bar"
+        colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444"]
+        
+      class_distribution:
+        type: "pie"
+        colors: ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
+  
+  # Notification settings
+  notifications:
+    enabled: true
+    position: "top-right"
+    duration: 5000
+    
+    types:
+      success:
+        color: "#10b981"
+        icon: "✅"
+        
+      error:
+        color: "#ef4444"
+        icon: "❌"
+        
+      warning:
+        color: "#f59e0b"
+        icon: "⚠️"
+        
+      info:
+        color: "#3b82f6"
+        icon: "ℹ️"
+        
+      job_complete:
+        color: "#10b981"
+        icon: "🎉"
+        sound: true
+  
+  # Feature flags
+  features:
+    enable_batch_processing: false
+    enable_video_processing: false
+    enable_real_time_detection: false
+    enable_model_comparison: false
+    enable_custom_models: false
+    
+    enable_export_results: true
+    export_formats: ["json", "csv", "xml"]
+    
+    enable_sharing: true
+    enable_favorites: false
+    enable_user_accounts: false
+    
+    enable_api_docs: true
+    enable_swagger_ui: true
+    
+    enable_webhooks: false
+    webhook_url: null
+    webhook_events: ["inference_complete", "error_occurred"]
+  
+  # Paths and directories
+  paths:
+    static_files: "./static"
+    upload_dir: "./uploads"
+    output_dir: "./outputs"
+    temp_dir: "./temp"
+    
+    custom_css: "./static/custom.css"
+    custom_js: "./static/custom.js"
+    
+    examples_dir: "./examples"
+    documentation_dir: "./docs"

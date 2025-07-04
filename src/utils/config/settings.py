@@ -4,7 +4,7 @@ Settings module that provides easy access to configuration values
 using the ConfigManager singleton.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, Optional, Union, List
 from src.utils.config.config_manager import get_config
 from src.utils.log.logger import get_logger
 
@@ -80,6 +80,46 @@ class Settings:
     def features(self) -> 'FeatureSettings':
         """Get feature settings"""
         return FeatureSettings(self._config)
+    
+    @property
+    def gradio(self) -> 'GradioSettings':
+        """Get Gradio settings"""
+        return GradioSettings(self._config)
+    
+    def get_section(self, section: str) -> Dict[str, Any]:
+        """
+        Get entire configuration section
+        
+        Args:
+            section: Section name (e.g., 'model', 'litserve', 'gradio')
+            
+        Returns:
+            Dictionary containing section configuration
+        """
+        return self._config.get_section(section)
+    
+    def get(self, key: str, default: Any = None) -> Any:
+        """
+        Get configuration value by dot notation key
+        
+        Args:
+            key: Dot notation key (e.g., 'model.device.preferred')
+            default: Default value if key not found
+            
+        Returns:
+            Configuration value
+        """
+        return self._config.get(key, default)
+    
+    def set(self, key: str, value: Any) -> None:
+        """
+        Set configuration value by dot notation key
+        
+        Args:
+            key: Dot notation key (e.g., 'model.device.preferred')
+            value: Value to set
+        """
+        self._config.set(key, value)
     
     def reload(self) -> bool:
         """
@@ -208,7 +248,7 @@ class ModelSettings(BaseSettings):
     
     def get_model_path(self, size: str) -> str:
         """Get model path for specific size"""
-        return self.model_paths.get(size, f'./models/yolo11{size}.pt')
+        return self.model_paths.get(size, f'yolo11{size}.pt')
 
 class ImageProcessingSettings(BaseSettings):
     """Image processing settings"""
@@ -597,6 +637,84 @@ class FeatureSettings(BaseSettings):
     @property
     def enable_custom_models(self) -> bool:
         return self.get('enable_custom_models', False)
+
+class GradioSettings(BaseSettings):
+    """Gradio settings"""
+    
+    def __init__(self, config_manager):
+        super().__init__(config_manager, 'gradio')
+    
+    @property
+    def app_name(self) -> str:
+        return self.get('app.name', 'YOLOv11 Object Detection')
+    
+    @property
+    def app_title(self) -> str:
+        return self.get('app.title', 'YOLOv11 Object Detection Interface')
+    
+    @property
+    def app_theme(self) -> str:
+        return self.get('app.theme', 'soft')
+    
+    @property
+    def server_host(self) -> str:
+        return self.get('server.host', '0.0.0.0')
+    
+    @property
+    def server_port(self) -> int:
+        return self.get('server.port', 7860)
+    
+    @property
+    def server_share(self) -> bool:
+        return self.get('server.share', False)
+    
+    @property
+    def server_debug(self) -> bool:
+        return self.get('server.debug', False)
+    
+    @property
+    def litserve_enabled(self) -> bool:
+        return self.get('backends.litserve.enabled', True)
+    
+    @property
+    def litserve_base_url(self) -> str:
+        return self.get('backends.litserve.base_url', 'http://localhost:8000')
+    
+    @property
+    def runpod_enabled(self) -> bool:
+        return self.get('backends.runpod.enabled', True)
+    
+    @property
+    def runpod_base_url(self) -> str:
+        return self.get('backends.runpod.base_url', 'https://api.runpod.ai/v2')
+    
+    @property
+    def detection_confidence_default(self) -> float:
+        return self.get('detection.confidence_threshold.default', 0.25)
+    
+    @property
+    def detection_iou_default(self) -> float:
+        return self.get('detection.iou_threshold.default', 0.45)
+    
+    @property
+    def detection_max_detections_default(self) -> int:
+        return self.get('detection.max_detections.default', 100)
+    
+    @property
+    def detection_max_image_size(self) -> int:
+        return self.get('detection.max_image_size', 10485760)
+    
+    @property
+    def notifications_enabled(self) -> bool:
+        return self.get('notifications.enabled', True)
+    
+    @property
+    def export_enabled(self) -> bool:
+        return self.get('features.enable_export_results', True)
+    
+    @property
+    def job_management_enabled(self) -> bool:
+        return self.get('backends.runpod.job_management.enabled', True)
 
 # Global settings instance
 settings = Settings()
