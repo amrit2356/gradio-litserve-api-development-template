@@ -1,0 +1,274 @@
+# utils/logging.yaml - Logging Configuration
+
+# Logging version (required for dictConfig)
+version: 1
+disable_existing_loggers: false
+
+# Formatters
+formatters:
+  default:
+    format: "%(name)s:%(lineno)d %(asctime)s %(levelname)s %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  
+  detailed:
+    format: "%(asctime)s | %(name)s | %(levelname)s | %(funcName)s:%(lineno)d | %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  
+  json:
+    format: "%(asctime)s %(name)s %(levelname)s %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+    class: "pythonjsonlogger.jsonlogger.JsonFormatter"
+  
+  simple:
+    format: "%(levelname)s: %(message)s"
+  
+  minimal:
+    format: "%(message)s"
+
+# Handlers
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: default
+    stream: ext://sys.stdout
+  
+  file:
+    class: logging.FileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: ./logs/app.log
+    mode: a
+    encoding: utf-8
+  
+  rotating_file:
+    class: logging.handlers.RotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: ./logs/app_rotating.log
+    mode: a
+    maxBytes: 10485760  # 10MB
+    backupCount: 5
+    encoding: utf-8
+  
+  timed_rotating_file:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: INFO
+    formatter: detailed
+    filename: ./logs/app_daily.log
+    when: midnight
+    interval: 1
+    backupCount: 30
+    encoding: utf-8
+  
+  error_file:
+    class: logging.FileHandler
+    level: ERROR
+    formatter: detailed
+    filename: ./logs/errors.log
+    mode: a
+    encoding: utf-8
+  
+  performance_file:
+    class: logging.FileHandler
+    level: INFO
+    formatter: json
+    filename: ./logs/performance.log
+    mode: a
+    encoding: utf-8
+
+# Loggers
+loggers:
+  # Root logger
+  root:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+  
+  # Application specific loggers
+  models:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+    qualname: models
+  
+  services:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+    qualname: services
+  
+  apis:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+    qualname: apis
+  
+  utils:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+    qualname: utils
+  
+  # Module specific loggers
+  yolo_model:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+    qualname: models.yolo_model
+  
+  yolo_service:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+    qualname: services.yolo_service
+  
+  litserve_api:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+    qualname: apis.litserve_api
+  
+  runpod_api:
+    level: INFO
+    handlers: [console, file]
+    propagate: false
+    qualname: apis.runpod_api
+  
+  image_processor:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+    qualname: utils.image_processor
+  
+  response_formatter:
+    level: DEBUG
+    handlers: [console, file]
+    propagate: false
+    qualname: utils.response_formatter
+  
+  # Performance logger
+  performance:
+    level: INFO
+    handlers: [performance_file]
+    propagate: false
+    qualname: performance
+  
+  # Error logger
+  errors:
+    level: ERROR
+    handlers: [error_file, console]
+    propagate: false
+    qualname: errors
+
+# Environment-specific configurations
+environments:
+  development:
+    root:
+      level: DEBUG
+      handlers: [console, file]
+    console:
+      level: DEBUG
+      formatter: detailed
+    file:
+      level: DEBUG
+      formatter: detailed
+  
+  production:
+    root:
+      level: INFO
+      handlers: [console, rotating_file, error_file]
+    console:
+      level: WARNING
+      formatter: simple
+    rotating_file:
+      level: INFO
+      formatter: json
+    error_file:
+      level: ERROR
+      formatter: detailed
+  
+  testing:
+    root:
+      level: DEBUG
+      handlers: [console]
+    console:
+      level: DEBUG
+      formatter: simple
+
+# Logging settings
+settings:
+  # Default environment
+  default_environment: "development"
+  
+  # Log directory settings
+  log_directory: "./logs"
+  create_log_directory: true
+  
+  # File settings
+  file_encoding: "utf-8"
+  file_mode: "a"
+  
+  # Rotation settings
+  max_file_size: 10485760  # 10MB
+  backup_count: 5
+  rotation_interval: "midnight"
+  
+  # Performance settings
+  enable_performance_logging: true
+  performance_log_interval: 60
+  
+  # Security settings
+  mask_sensitive_data: true
+  sensitive_fields:
+    - "password"
+    - "api_key"
+    - "token"
+    - "secret"
+  
+  # Filtering settings
+  enable_filtering: true
+  filter_patterns:
+    - "health_check"
+    - "ping"
+  
+  # Async logging settings
+  enable_async_logging: false
+  async_buffer_size: 1000
+  async_flush_interval: 5
+
+# Module-specific logging levels
+module_levels:
+  torch: WARNING
+  urllib3: WARNING
+  requests: WARNING
+  PIL: WARNING
+  matplotlib: WARNING
+  numpy: WARNING
+  cv2: WARNING
+  ultralytics: INFO
+  litserve: INFO
+  runpod: INFO
+
+# Custom configurations
+custom:
+  # Request/Response logging
+  log_requests: true
+  log_responses: true
+  log_request_body: false
+  log_response_body: false
+  max_log_body_size: 1024
+  
+  # Performance metrics
+  log_processing_time: true
+  log_memory_usage: true
+  log_gpu_usage: true
+  
+  # Error handling
+  log_stack_traces: true
+  log_full_exceptions: true
+  
+  # Debug settings
+  debug_mode: false
+  verbose_mode: false
+  trace_mode: false

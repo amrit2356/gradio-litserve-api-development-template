@@ -1,0 +1,217 @@
+# utils/config.yaml - Application Configuration
+
+# Application metadata
+app:
+  name: "YOLOv11 API"
+  version: "1.0.0"
+  description: "YOLO object detection API with LitServe and RunPod support"
+  author: "Your Name"
+  contact: "your.email@example.com"
+
+# Model configuration
+model:
+  default_size: "n"  # n, s, m, l, x
+  available_sizes:
+    - "n"
+    - "s"
+    - "m"
+    - "l"
+    - "x"
+  model_paths:
+    n: "yolo11n.pt"
+    s: "yolo11s.pt"
+    m: "yolo11m.pt"
+    l: "yolo11l.pt"
+    x: "yolo11x.pt"
+  device:
+    auto_detect: true
+    preferred: "auto"  # auto, cpu, cuda
+    fallback: "cpu"
+  inference:
+    confidence_threshold: 0.25
+    iou_threshold: 0.45
+    max_detections: 100
+    image_size: 640
+  warmup:
+    enabled: true
+    dummy_image_size: [640, 640]
+    channels: 3
+
+# Image processing configuration
+image_processing:
+  supported_formats:
+    - "JPEG"
+    - "PNG"
+    - "WEBP"
+    - "BMP"
+  max_image_size: 10485760  # 10MB in bytes
+  min_image_size: 1024      # 1KB in bytes
+  max_dimensions:
+    width: 4096
+    height: 4096
+  min_dimensions:
+    width: 32
+    height: 32
+  preprocessing:
+    auto_resize: false
+    maintain_aspect_ratio: true
+    target_size: null
+  validation:
+    strict_mode: true
+    check_dimensions: true
+    check_file_size: true
+
+# Response formatting configuration
+response:
+  formats:
+    - "detailed"
+    - "minimal"
+    - "compact"
+  default_format: "detailed"
+  include_metadata: true
+  include_timing: true
+  decimal_precision: 3
+  bbox_format: "xyxy"  # xyxy, xywh, cxcywh
+  confidence_format: "decimal"  # decimal, percentage
+
+# LitServe API configuration
+litserve:
+  server:
+    host: "0.0.0.0"
+    port: 8000
+    workers_per_device: 1
+    timeout: 30
+    accelerator: "auto"
+    max_batch_size: 8
+    batch_timeout: 0.1
+  api:
+    enable_async: true
+    enable_streaming: false
+    enable_cors: true
+    cors_origins:
+      - "*"
+    max_request_size: 10485760  # 10MB
+  endpoints:
+    predict: "/predict"
+    health: "/health"
+    info: "/info"
+    metrics: "/metrics"
+  middleware:
+    enable_rate_limiting: false
+    rate_limit_requests: 100
+    rate_limit_window: 60
+    enable_auth: false
+
+# RunPod API configuration
+runpod:
+  serverless:
+    return_aggregate_stream: true
+    rp_serve_api: true
+    rp_log_level: "INFO"
+  handler:
+    timeout: 60
+    memory_limit: 4096
+    concurrent_requests: 10
+  environment:
+    required_vars:
+      - "RUNPOD_POD_ID"
+      - "RUNPOD_POD_HOSTNAME"
+    optional_vars:
+      - "RUNPOD_API_KEY"
+      - "RUNPOD_WEBHOOK_SECRET"
+  test_input:
+    filename: "test_input.json"
+    auto_create: true
+    image_format: "JPEG"
+    image_size: [640, 480]
+    image_color: "red"
+
+# Performance and optimization
+performance:
+  enable_profiling: false
+  enable_metrics: true
+  metrics_interval: 60
+  memory_management:
+    clear_cache_after_requests: 100
+    force_gc_after_requests: 500
+    max_memory_usage: 0.8  # 80% of available memory
+  gpu_optimization:
+    enable_mixed_precision: true
+    enable_cudnn_benchmark: true
+    enable_tensorrt: false
+  threading:
+    max_workers: 4
+    thread_pool_size: 8
+
+# Development and debugging
+development:
+  debug_mode: false
+  hot_reload: false
+  auto_reload_config: true
+  enable_debug_endpoints: false
+  mock_model: false
+  save_debug_images: false
+  debug_image_path: "./debug_images"
+  profiling:
+    enable_line_profiler: false
+    enable_memory_profiler: false
+    profile_output_dir: "./profiles"
+
+# Security configuration
+security:
+  enable_input_validation: true
+  enable_output_sanitization: true
+  max_upload_size: 10485760  # 10MB
+  allowed_mime_types:
+    - "image/jpeg"
+    - "image/png"
+    - "image/webp"
+    - "image/bmp"
+  rate_limiting:
+    enabled: false
+    requests_per_minute: 60
+    burst_limit: 10
+  api_keys:
+    enabled: false
+    header_name: "X-API-Key"
+    validation_endpoint: null
+
+# Paths and directories
+paths:
+  models_dir: "./models"
+  cache_dir: "./cache"
+  logs_dir: "./logs"
+  temp_dir: "./temp"
+  data_dir: "./data"
+  output_dir: "./output"
+  config_dir: "./config"
+  
+# Feature flags
+features:
+  enable_batch_processing: true
+  enable_async_processing: true
+  enable_model_caching: true
+  enable_response_caching: false
+  enable_health_checks: true
+  enable_metrics_collection: true
+  enable_auto_scaling: false
+  enable_model_switching: false
+  enable_custom_models: false
+
+# Monitoring and alerts
+monitoring:
+  enable_health_checks: true
+  health_check_interval: 30
+  enable_performance_monitoring: true
+  performance_check_interval: 60
+  alerts:
+    enable_email_alerts: false
+    enable_webhook_alerts: false
+    error_threshold: 10
+    latency_threshold: 5.0
+    memory_threshold: 0.9
+  metrics:
+    enable_prometheus: false
+    prometheus_port: 9090
+    enable_grafana: false
+    grafana_port: 3000
