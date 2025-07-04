@@ -1,4 +1,4 @@
-# 🔍 YOLOv11 ML Pipeline Template 1
+# 🔍 Gradio-litserve ML Deployment Template
 
 > **Scalable, Production-Ready Object Detection Pipeline with Gradio Frontend and LitServe Backend**
 
