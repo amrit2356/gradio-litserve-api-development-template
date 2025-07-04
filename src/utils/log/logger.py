@@ -47,6 +47,9 @@ class LoggerManager:
             # Create logs directory if it doesn't exist
             self._create_log_directories()
             
+            # Check if JSON formatter is available
+            self._check_json_formatter_availability()
+            
             # Configure logging
             self._configure_logging()
             
@@ -54,6 +57,28 @@ class LoggerManager:
             # Fallback to basic logging if configuration fails
             self._setup_fallback_logging()
             print(f"Warning: Failed to setup logging configuration: {e}")
+    
+    def _check_json_formatter_availability(self) -> None:
+        """Check if JSON formatter is available and update config accordingly"""
+        try:
+            import pythonjsonlogger.jsonlogger
+            
+            # JSON formatter is available, add it to formatters
+            if 'formatters' in self._logging_config:
+                self._logging_config['formatters']['json'] = {
+                    'format': '%(asctime)s %(name)s %(levelname)s %(message)s',
+                    'datefmt': '%Y-%m-%d %H:%M:%S',
+                    'class': 'pythonjsonlogger.jsonlogger.JsonFormatter'
+                }
+                
+        except ImportError:
+            # JSON formatter not available, ensure we don't reference it
+            if 'formatters' in self._logging_config:
+                # Remove any JSON formatter references
+                self._logging_config['formatters'].pop('json', None)
+                
+                # Replace json formatter references with structured formatter
+                self._replace_json_formatter_references()
     
     def _create_log_directories(self) -> None:
         """Create log directories if they don't exist"""
@@ -82,11 +107,37 @@ class LoggerManager:
         if not self._logging_config:
             raise ValueError("No logging configuration available")
         
-        # Configure logging
-        logging.config.dictConfig(self._logging_config)
+        try:
+            # Configure logging
+            logging.config.dictConfig(self._logging_config)
+            
+            # Set module-specific logging levels
+            self._set_module_logging_levels()
+            
+        except Exception as e:
+            # If JSON formatter fails, fall back to basic configuration
+            if "json" in str(e).lower() or "pythonjsonlogger" in str(e).lower():
+                logger = logging.getLogger(__name__)
+                logger.warning(f"JSON formatter not available, using fallback configuration: {e}")
+                self._setup_fallback_logging()
+            else:
+                raise e
+    
+    def _replace_json_formatter_references(self) -> None:
+        """Replace JSON formatter references with structured formatter"""
+        def replace_in_dict(d):
+            if isinstance(d, dict):
+                for key, value in d.items():
+                    if key == 'formatter' and value == 'json':
+                        d[key] = 'structured'
+                    elif isinstance(value, dict):
+                        replace_in_dict(value)
+                    elif isinstance(value, list):
+                        for i, item in enumerate(value):
+                            if isinstance(item, dict):
+                                replace_in_dict(item)
         
-        # Set module-specific logging levels
-        self._set_module_logging_levels()
+        replace_in_dict(self._logging_config)
     
     def _set_module_logging_levels(self) -> None:
         """Set logging levels for external modules"""
