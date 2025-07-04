@@ -74,42 +74,91 @@ graph TB
 ## 🏗️ Project Structure
 
 ```
-├── app_ui.py
-├── app_server.py
-├── Dockerfile.litserve
-├── Dockerfile.gradio
-├── k8s/
-├── requirements.litserve.txt
-├── requirements.gradio.txt
-├── .env.development
-├── .env.staging
-├── .env.production
-├── setup_and_run.sh
-└── README.md
+├── 📁 src/                          # Core application modules
+│   ├── 📁 api/                      # API implementations
+│   │   ├── litserve_api.py         # LitServe backend API
+│   │   └── runpod_api.py           # RunPod serverless API
+│   ├── 📁 services/                 # Business logic layer
+│   │   └── yolov11_service.py      # Main YOLO service orchestrator
+│   ├── 📁 pipelines/                # Model pipeline implementations
+│   │   └── yolo.py                 # YOLOv11 model wrapper
+│   ├── 📁 ui/                       # Frontend components
+│   │   ├── gradio_app.py           # Main Gradio application
+│   │   ├── backend_manager.py      # Backend connection manager
+│   │   ├── backend_validator.py    # Backend health validation
+│   │   └── gradio_utils.py         # UI utility functions
+│   └── 📁 utils/                    # Shared utilities
+│       ├── 📁 config/               # Configuration system
+│       │   ├── config.yaml         # Main configuration file
+│       │   ├── settings.py         # Settings management
+│       │   └── config_manager.py   # Configuration loader
+│       ├── 📁 log/                  # Logging system
+│       │   ├── logger.py           # Logger manager
+│       │   └── log_config.yaml     # Logging configuration
+│       ├── 📁 io/                   # Input/Output utilities
+│       │   ├── image_processor.py  # Image processing utilities
+│       │   └── response_formatter.py # Response formatting
+│       └── 📁 resources/            # Static resources
+├── 📁 .docker/                      # Docker configurations
+│   ├── 📁 litserve/                # LitServe Docker setup
+│   └── 📁 gradio/                  # Gradio Docker setup
+├── 📁 tests/                        # Test suite
+├── 📁 logs/                         # Application logs
+├── 📁 models/                       # Model storage
+├── 📁 cache/                        # Runtime cache
+├── app_ui.py                       # 🎨 Gradio frontend entry point
+├── app_server.py                   # ⚡ LitServe/RunPod backend entry point
+├── requirements.txt                # Python dependencies
+└── README.md                       # This file
 ```
+
+---
 
 ## 🚀 Quick Start
 
-Get up and running in 5 minutes:
+### **Option 1: Separate Applications (Recommended)**
 
 ```bash
 # Clone the repository
 git clone <repository-url>
-cd yolov11-ml-template
+cd gradio-litserve-ml-template
 
-# Make setup script executable
-chmod +x setup_and_run.sh
+# Install dependencies
+pip install -r requirements.txt
 
-# Run with Docker (recommended)
-./setup_and_run.sh docker
+# Terminal 1: Start LitServe backend
+python app_server.py --mode litserve --host 0.0.0.0 --port 8000
 
-# Or run locally for development
-./setup_and_run.sh local
+# Terminal 2: Start Gradio frontend
+python app_ui.py --host 0.0.0.0 --port 7860
 ```
 
-**Access the application:**
+### **Option 2: Docker Deployment**
+
+```bash
+# Using Docker Compose from .docker directory
+cd .docker/litserve
+docker-compose up -d
+
+# Check services
+docker-compose ps
+curl http://localhost:8000/health  # Backend health
+curl http://localhost:7860         # Frontend
+```
+
+### **Option 3: RunPod Serverless**
+
+```bash
+# Deploy to RunPod
+python app_server.py --mode runpod --model-size s
+
+# Create test input file
+python app_server.py --create-test
+```
+
+**Access Points:**
 - 🎨 **Gradio UI**: http://localhost:7860
-- ⚡ **API Backend**: http://localhost:8000
+- ⚡ **LitServe API**: http://localhost:8000
 - 📊 **Health Check**: http://localhost:8000/health
 
 ---
@@ -121,52 +170,47 @@ chmod +x setup_and_run.sh
 | Component | Version | Purpose |
 |-----------|---------|---------|
 | 🐍 **Python** | 3.11+ | Runtime environment |
-| 🐳 **Docker** | 20.10+ | Containerization |
-| 🔧 **Docker Compose** | 2.0+ | Service orchestration |
-| 💾 **RAM** | 4GB+ | Model loading |
-| 🎮 **GPU** | Optional | Faster inference |
+| 🔥 **PyTorch** | 2.0+ | ML framework |
+| 📦 **pip** | Latest | Package manager |
+| 🐳 **Docker** | 20.10+ | Containerization (optional) |
+| 🎮 **CUDA** | 11.8+ | GPU acceleration (optional) |
 
-### 📋 **System Requirements**
+### 📋 **Dependencies**
 
-#### **Minimum Requirements**
-- **CPU**: 2 cores, 2.0 GHz
-- **RAM**: 4GB
-- **Storage**: 5GB free space
-- **Network**: Internet connection for model downloads
+The project uses a unified requirements file:
 
-#### **Recommended Requirements**
-- **CPU**: 4+ cores, 3.0 GHz
-- **RAM**: 8GB+
-- **GPU**: NVIDIA GPU with 4GB+ VRAM
-- **Storage**: 10GB+ SSD
+```bash
+# Core ML dependencies
+torch>=2.0.0
+torchvision>=0.15.0
+ultralytics>=8.0.0
+pillow>=9.0.0
+numpy>=1.21.0
+
+# API frameworks
+litserve>=0.2.0
+runpod>=1.0.0
+gradio>=4.0.0
+
+# Configuration and utilities
+pyyaml>=6.0
+python-json-logger>=2.0.0
+requests>=2.28.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+black>=23.0.0
+```
 
 ### 🛠️ **Installation Methods**
 
-#### **Method 1: Docker Deployment (Recommended)**
-
-```bash
-# 1. Clone and navigate
-git clone <repository-url>
-cd yolov11-ml-template
-
-# 2. Verify Docker installation
-docker --version
-docker-compose --version
-
-# 3. Build and run services
-./setup_and_run.sh docker
-
-# 4. Verify deployment
-curl http://localhost:8000/health
-curl http://localhost:7860
-```
-
-#### **Method 2: Local Development Setup**
+#### **Method 1: Local Development**
 
 ```bash
 # 1. Clone repository
 git clone <repository-url>
-cd yolov11-ml-template
+cd gradio-litserve-ml-template
 
 # 2. Create virtual environment
 python3 -m venv venv
@@ -174,461 +218,349 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # 3. Install dependencies
 pip install --upgrade pip
-pip install -r requirements.litserve.txt
-pip install -r requirements.gradio.txt
+pip install -r requirements.txt
 
-# 4. Start services
-./setup_and_run.sh local
+# 4. Verify installation
+python app_server.py --check-env
+python app_ui.py --validate-config
 ```
 
-#### **Method 3: Production Kubernetes Deployment**
+#### **Method 2: Docker Development**
 
 ```bash
-# 1. Build Docker images
-docker build -f Dockerfile.litserve -t yolo-litserve:latest .
-docker build -f Dockerfile.gradio -t yolo-gradio:latest .
+# 1. Navigate to Docker configuration
+cd .docker/litserve
 
-# 2. Push to registry
-docker tag yolo-litserve:latest your-registry/yolo-litserve:latest
-docker push your-registry/yolo-litserve:latest
+# 2. Build and run services
+docker-compose up --build
 
-# 3. Deploy with Helm or kubectl
-kubectl apply -f k8s/
+# 3. View logs
+docker-compose logs -f yolo-litserve
+docker-compose logs -f yolo-gradio
 ```
 
-### 🔧 **GPU Support Setup**
+#### **Method 3: Production Deployment**
 
-#### **NVIDIA Docker Setup**
 ```bash
-# Install NVIDIA Container Toolkit
-curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg
-echo "deb [signed-by=/usr/share/keyrings/nvidia-container-toolkit-keyring.gpg] https://nvidia.github.io/libnvidia-container/stable/deb/$(. /etc/os-release; echo $ID$VERSION_ID) /" | sudo tee /etc/apt/sources.list.d/nvidia-container-toolkit.list
+# 1. Build production images
+docker build -f .docker/litserve/Dockerfile -t yolo-litserve:prod .
+docker build -f .docker/gradio/Dockerfile -t yolo-gradio:prod .
 
-sudo apt-get update
-sudo apt-get install -y nvidia-container-toolkit
-sudo nvidia-ctk runtime configure --runtime=docker
-sudo systemctl restart docker
+# 2. Deploy with environment variables
+export MODEL_SIZE=m
+export WORKERS_PER_DEVICE=2
+export LOG_LEVEL=warning
 
-# Test GPU access
-docker run --rm --gpus all nvidia/cuda:11.8-base-ubuntu20.04 nvidia-smi
-```
+# 3. Run production containers
+docker run -d --name yolo-backend \
+  -p 8000:8000 \
+  -e MODEL_SIZE=$MODEL_SIZE \
+  yolo-litserve:prod
 
-#### **Run with GPU Support**
-```bash
-# Use GPU-enabled Docker Compose
-docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up
+docker run -d --name yolo-frontend \
+  -p 7860:7860 \
+  -e LITSERVE_URL=http://yolo-backend:8000 \
+  yolo-gradio:prod
 ```
 
 ---
 
-## 🧪 Testing
+## 🔧 Configuration
 
-### 🎯 **Testing Strategy**
+### ⚙️ **Configuration System**
 
-Our testing approach covers multiple layers:
+The application uses a hierarchical configuration system:
 
-```mermaid
-graph TD
-    A[🧪 Testing Pyramid] --> B[🔧 Unit Tests]
-    A --> C[🔗 Integration Tests]
-    A --> D[📊 Load Tests]
-    A --> E[🎭 End-to-End Tests]
-    
-    B --> B1[Model Loading]
-    B --> B2[Image Processing]
-    B --> B3[API Endpoints]
-    
-    C --> C1[Service Communication]
-    C --> C2[Database Connections]
-    C --> C3[External APIs]
-    
-    D --> D1[Concurrent Requests]
-    D --> D2[Memory Usage]
-    D --> D3[Response Times]
-    
-    E --> E1[User Workflows]
-    E --> E2[Error Scenarios]
-    E --> E3[Performance]
-```
+1. **Base Configuration**: `src/utils/config/config.yaml`
+2. **Environment Variables**: Override YAML settings
+3. **Command Line Arguments**: Override environment and YAML
+4. **Runtime Settings**: Dynamic configuration updates
 
-### 🔬 **Test Categories**
+#### **Key Configuration Files**
 
-#### **Unit Tests** (`tests/unit/`)
-```bash
-# Test individual components
-pytest tests/unit/test_model_loading.py -v
-pytest tests/unit/test_image_processing.py -v
-pytest tests/unit/test_api_endpoints.py -v
-```
+- `src/utils/config/config.yaml` - Main application settings
+- `src/utils/log/log_config.yaml` - Logging configuration
+- Environment-specific overrides via `ENVIRONMENT` variable
 
-**Coverage Areas:**
-- ✅ Model initialization and loading
-- ✅ Image encoding/decoding functions
-- ✅ Detection result processing
-- ✅ Error handling edge cases
-- ✅ Configuration validation
+#### **Essential Settings**
 
-#### **Integration Tests** (`tests/integration/`)
-```bash
-# Test service interactions
-pytest tests/integration/test_litserve_gradio.py -v
-pytest tests/integration/test_model_inference.py -v
-pytest tests/integration/test_health_checks.py -v
-```
-
-**Coverage Areas:**
-- ✅ Gradio ↔ LitServe communication
-- ✅ Model inference pipeline
-- ✅ Health check endpoints
-- ✅ Error propagation
-- ✅ Timeout handling
-
-#### **Load Tests** (`tests/load/`)
-```bash
-# Performance and scalability testing
-pytest tests/load/test_concurrent_requests.py -v
-locust -f tests/load/locustfile.py --host=http://localhost:8000
-```
-
-**Coverage Areas:**
-- ✅ Concurrent request handling
-- ✅ Memory leak detection
-- ✅ Response time benchmarks
-- ✅ Resource utilization
-- ✅ Auto-scaling triggers
-
-#### **End-to-End Tests** (`tests/e2e/`)
-```bash
-# Full user workflow testing
-pytest tests/e2e/test_complete_workflow.py -v
-playwright test tests/e2e/gradio_interface.spec.js
-```
-
-**Coverage Areas:**
-- ✅ Complete user journeys
-- ✅ UI interaction testing
-- ✅ Cross-browser compatibility
-- ✅ Mobile responsiveness
-- ✅ Accessibility compliance
-
-### 🏃 **Running Tests**
-
-#### **Quick Test Suite**
-```bash
-# Run all tests
-make test
-
-# Run specific test categories
-make test-unit
-make test-integration
-make test-load
-make test-e2e
-
-# Generate coverage report
-make test-coverage
-```
-
-#### **Docker-based Testing**
-```bash
-# Test in isolated environment
-docker-compose -f docker-compose.test.yml up --abort-on-container-exit
-
-# Test with different Python versions
-docker run --rm -v $(pwd):/app python:3.11 pytest /app/tests/
-```
-
-#### **Continuous Integration**
 ```yaml
-# .github/workflows/test.yml
-name: Test Suite
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.11, 3.12]
-    steps:
-      - uses: actions/checkout@v3
-      - name: Run Test Suite
-        run: make test-ci
+# Model Configuration
+model:
+  default_size: "n"              # YOLO model size (n/s/m/l/x)
+  device_preferred: "auto"       # Device selection (auto/cpu/cuda)
+  confidence_threshold: 0.25     # Detection confidence
+  iou_threshold: 0.45           # NMS IoU threshold
+  max_detections: 100           # Maximum detections per image
+
+# LitServe Configuration
+litserve:
+  server:
+    host: "0.0.0.0"
+    port: 8000
+    workers_per_device: 1
+    timeout: 30
+  processing:
+    max_batch_size: 4
+    batch_timeout: 0.1
+
+# Gradio Configuration
+gradio:
+  server:
+    host: "0.0.0.0"
+    port: 7860
+    share: false
+    debug: false
+  backends:
+    litserve:
+      enabled: true
+      base_url: "http://localhost:8000"
+    runpod:
+      enabled: false
+      base_url: ""
+
+# Logging Configuration
+logging:
+  level: "INFO"
+  format: "detailed"
+  log_directory: "./logs"
+  max_file_size: 10485760  # 10MB
+```
+
+### 🌍 **Environment Variables**
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENVIRONMENT` | `development` | Environment mode (development/production/testing) |
+| `MODEL_SIZE` | `n` | YOLO model size (n/s/m/l/x) |
+| `DEVICE` | `auto` | Inference device (auto/cpu/cuda) |
+| `LITSERVE_HOST` | `0.0.0.0` | LitServe host address |
+| `LITSERVE_PORT` | `8000` | LitServe port |
+| `GRADIO_HOST` | `0.0.0.0` | Gradio host address |
+| `GRADIO_PORT` | `7860` | Gradio port |
+| `LOG_LEVEL` | `INFO` | Logging level |
+| `DEBUG` | `false` | Debug mode |
+| `WORKERS_PER_DEVICE` | `1` | LitServe workers per device |
+| `MAX_BATCH_SIZE` | `4` | Maximum batch size |
+| `CONFIDENCE_THRESHOLD` | `0.25` | Detection confidence threshold |
+
+### 🔧 **Configuration Commands**
+
+```bash
+# View current configuration
+python app_server.py --show-config
+python app_ui.py --show-config
+
+# Validate configuration
+python app_server.py --validate-config
+python app_ui.py --validate-config
+
+# Check system environment
+python app_server.py --check-env
+
+# Check backend connectivity
+python app_ui.py --check-backends
+```
+
+---
+
+## 🌐 Usage Examples
+
+### **Backend Server (app_server.py)**
+
+```bash
+# Basic LitServe mode
+python app_server.py --mode litserve
+
+# LitServe with custom settings
+python app_server.py \
+  --mode litserve \
+  --model-size m \
+  --host 0.0.0.0 \
+  --port 8000 \
+  --workers 2 \
+  --timeout 60
+
+# RunPod serverless mode
+python app_server.py --mode runpod --model-size s
+
+# RunPod with environment validation
+python app_server.py --validate-runpod
+
+# Debug mode
+python app_server.py --mode litserve --debug
+```
+
+### **Frontend UI (app_ui.py)**
+
+```bash
+# Basic Gradio interface
+python app_ui.py
+
+# Custom host and port
+python app_ui.py --host 0.0.0.0 --port 7860
+
+# Enable public sharing
+python app_ui.py --share
+
+# Debug mode with config validation
+python app_ui.py --debug --validate-config
+
+# Check backend connectivity before starting
+python app_ui.py --check-backends
+```
+
+### **Docker Usage**
+
+```bash
+# Development with live reload
+cd .docker/litserve
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# Production deployment
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+# GPU support
+docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up
+
+# Scale backend services
+docker-compose up --scale yolo-litserve=3
 ```
 
 ---
 
 ## 🚢 Deployment
 
-### 🏠 **Single Machine Deployment**
+### 🏠 **Local Development**
 
-#### **Docker Compose (Recommended)**
 ```bash
-# Production deployment
-docker-compose -f docker-compose.prod.yml up -d
+# Method 1: Separate terminals
+# Terminal 1: Backend
+python app_server.py --mode litserve --debug
 
-# With monitoring
-docker-compose -f docker-compose.prod.yml -f docker-compose.monitoring.yml up -d
+# Terminal 2: Frontend  
+python app_ui.py --debug
 
-# Scale services
-docker-compose up --scale yolo-litserve=3 -d
+# Method 2: Docker development
+cd .docker/litserve
+docker-compose up --build
 ```
 
-#### **Systemd Service**
-```bash
-# Install as system service
-sudo cp yolo-ml-pipeline.service /etc/systemd/system/
-sudo systemctl enable yolo-ml-pipeline
-sudo systemctl start yolo-ml-pipeline
-```
+### 🌐 **Production Deployment**
 
-### 🌐 **Distributed Deployment**
+#### **Docker Compose Production**
 
-#### **Architecture for Separate Machines**
-
-```mermaid
-graph TD
-    A[👥 Load Balancer<br/>nginx/HAProxy] --> B[🎨 Gradio Frontend<br/>Machine 1]
-    A --> C[🎨 Gradio Frontend<br/>Machine 2]
-    
-    B --> D[⚡ LitServe Backend<br/>GPU Machine 1]
-    C --> D
-    B --> E[⚡ LitServe Backend<br/>GPU Machine 2]
-    C --> E
-    
-    D --> F[📊 Monitoring<br/>Prometheus/Grafana]
-    E --> F
-    
-    G[🗄️ Shared Storage<br/>NFS/S3] --> D
-    G --> E
-```
-
-#### **Machine Configuration**
-
-**Frontend Machines** (CPU-optimized)
 ```yaml
-# frontend-machine.yml
+# docker-compose.prod.yml
+version: '3.8'
 services:
-  gradio-frontend:
-    image: yolo-gradio:latest
-    environment:
-      - LITSERVE_URLS=http://gpu-machine-1:8000,http://gpu-machine-2:8000
-      - LOAD_BALANCER_STRATEGY=round_robin
+  yolo-litserve:
+    image: yolo-litserve:latest
     ports:
-      - "7860:7860"
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - MODEL_SIZE=m
+      - WORKERS_PER_DEVICE=2
+      - LOG_LEVEL=warning
     deploy:
       replicas: 2
       resources:
         limits:
-          memory: 2G
+          memory: 4G
           cpus: 2
-```
 
-**Backend Machines** (GPU-optimized)
-```yaml
-# backend-machine.yml
-services:
-  litserve-backend:
-    image: yolo-litserve:latest
+  yolo-gradio:
+    image: yolo-gradio:latest
+    ports:
+      - "7860:7860"
     environment:
-      - CUDA_VISIBLE_DEVICES=0
-      - MODEL_CACHE_DIR=/shared/models
-    volumes:
-      - /shared/models:/app/models
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+      - LITSERVE_URL=http://yolo-litserve:8000
+      - ENVIRONMENT=production
+    depends_on:
+      - yolo-litserve
 ```
 
-#### **Load Balancer Configuration**
+#### **Kubernetes Deployment**
 
-**Nginx Setup**
-```nginx
-# /etc/nginx/sites-available/yolo-ml-pipeline
-upstream gradio_frontend {
-    server frontend-machine-1:7860;
-    server frontend-machine-2:7860;
-}
-
-upstream litserve_backend {
-    server gpu-machine-1:8000;
-    server gpu-machine-2:8000;
-}
-
-server {
-    listen 80;
-    server_name your-domain.com;
-    
-    location / {
-        proxy_pass http://gradio_frontend;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-    
-    location /api/ {
-        proxy_pass http://litserve_backend/;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-}
-```
-
-### ☁️ **Cloud Deployment**
-
-#### **AWS ECS/Fargate**
 ```yaml
-# ecs-task-definition.json
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yolo-litserve
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: yolo-litserve
+  template:
+    metadata:
+      labels:
+        app: yolo-litserve
+    spec:
+      containers:
+      - name: yolo-litserve
+        image: yolo-litserve:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: MODEL_SIZE
+          value: "m"
+        - name: WORKERS_PER_DEVICE
+          value: "2"
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1"
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: yolo-litserve-service
+spec:
+  selector:
+    app: yolo-litserve
+  ports:
+  - port: 8000
+    targetPort: 8000
+  type: LoadBalancer
+```
+
+#### **Cloud Deployment**
+
+**RunPod Serverless:**
+```bash
+# Deploy to RunPod
+python app_server.py --mode runpod --model-size m
+
+# Create test configuration
+python app_server.py --create-test
+```
+
+**AWS ECS/Fargate:**
+```json
 {
   "family": "yolo-ml-pipeline",
   "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
   "cpu": "2048",
   "memory": "4096",
   "containerDefinitions": [
     {
-      "name": "gradio-frontend",
-      "image": "your-ecr-repo/yolo-gradio:latest",
-      "portMappings": [{"containerPort": 7860}]
-    },
-    {
-      "name": "litserve-backend",
-      "image": "your-ecr-repo/yolo-litserve:latest",
-      "portMappings": [{"containerPort": 8000}]
+      "name": "yolo-litserve",
+      "image": "your-registry/yolo-litserve:latest",
+      "portMappings": [{"containerPort": 8000}],
+      "environment": [
+        {"name": "MODEL_SIZE", "value": "m"},
+        {"name": "WORKERS_PER_DEVICE", "value": "2"}
+      ]
     }
   ]
 }
-```
-
-#### **Google Cloud Run**
-```yaml
-# cloudrun-service.yaml
-apiVersion: serving.knative.dev/v1
-kind: Service
-metadata:
-  name: yolo-ml-pipeline
-spec:
-  template:
-    metadata:
-      annotations:
-        autoscaling.knative.dev/maxScale: "10"
-    spec:
-      containers:
-      - image: gcr.io/your-project/yolo-gradio:latest
-        ports:
-        - containerPort: 7860
-        resources:
-          limits:
-            memory: "4Gi"
-            cpu: "2"
-```
-
-#### **Azure Container Instances**
-```yaml
-# azure-container-group.yaml
-apiVersion: '2021-03-01'
-type: Microsoft.ContainerInstance/containerGroups
-properties:
-  containers:
-  - name: gradio-frontend
-    properties:
-      image: your-registry.azurecr.io/yolo-gradio:latest
-      ports:
-      - port: 7860
-      resources:
-        requests:
-          memoryInGB: 2
-          cpu: 1
-```
-
-### 🔧 **Environment-Specific Configurations**
-
-#### **Development Environment**
-```bash
-# .env.development
-DEBUG=true
-LOG_LEVEL=debug
-MODEL_SIZE=yolo11n
-MAX_BATCH_SIZE=1
-ENABLE_PROFILING=true
-```
-
-#### **Staging Environment**
-```bash
-# .env.staging
-DEBUG=false
-LOG_LEVEL=info
-MODEL_SIZE=yolo11s
-MAX_BATCH_SIZE=4
-ENABLE_MONITORING=true
-```
-
-#### **Production Environment**
-```bash
-# .env.production
-DEBUG=false
-LOG_LEVEL=warning
-MODEL_SIZE=yolo11m
-MAX_BATCH_SIZE=8
-ENABLE_MONITORING=true
-ENABLE_METRICS=true
-ENABLE_TRACING=true
-```
-
-### 📊 **Monitoring & Observability**
-
-#### **Health Checks**
-```bash
-# Kubernetes health checks
-livenessProbe:
-  httpGet:
-    path: /health
-    port: 8000
-  initialDelaySeconds: 30
-  periodSeconds: 10
-
-readinessProbe:
-  httpGet:
-    path: /ready
-    port: 8000
-  initialDelaySeconds: 5
-  periodSeconds: 5
-```
-
-#### **Metrics Collection**
-```yaml
-# prometheus-config.yml
-scrape_configs:
-  - job_name: 'yolo-litserve'
-    static_configs:
-      - targets: ['litserve:8000']
-    metrics_path: '/metrics'
-    scrape_interval: 15s
-```
-
-### 🚀 **Scaling Strategies**
-
-#### **Horizontal Pod Autoscaler**
-```yaml
-# hpa.yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: yolo-backend-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: yolo-litserve
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
 ```
 
 ---
@@ -646,6 +578,8 @@ GET /health
 {
   "status": "healthy",
   "model": "YOLOv11",
+  "model_size": "n",
+  "device": "cuda",
   "version": "1.0.0",
   "timestamp": "2024-01-01T12:00:00Z"
 }
@@ -656,48 +590,122 @@ GET /health
 POST /predict
 Content-Type: application/json
 ```
+
 **Request:**
 ```json
 {
-  "image": "base64_encoded_image_string"
+  "image": "base64_encoded_image_string",
+  "confidence": 0.25,
+  "include_image_info": false,
+  "include_performance": true,
+  "response_format": "detailed"
 }
 ```
+
 **Response:**
 ```json
 {
   "success": true,
   "detections": [
     {
-      "bbox": {"x1": 100, "y1": 50, "x2": 200, "y2": 150},
+      "bbox": {
+        "x1": 100.5,
+        "y1": 50.2,
+        "x2": 200.8,
+        "y2": 150.9
+      },
       "confidence": 0.95,
       "class_id": 0,
       "class_name": "person"
     }
   ],
   "count": 1,
-  "model": "YOLOv11",
-  "message": "Detected 1 objects"
+  "model_info": {
+    "model": "YOLOv11",
+    "size": "n",
+    "device": "cuda"
+  },
+  "performance": {
+    "processing_time": 0.045,
+    "image_size": [640, 480]
+  },
+  "api_version": "1.0.0",
+  "server_type": "litserve",
+  "timestamp": "2024-01-01T12:00:00Z"
 }
 ```
 
+### 📱 **Gradio Frontend Features**
+
+The Gradio interface provides:
+
+- **Image Upload**: Drag & drop or file selection
+- **Real-time Detection**: Live inference results
+- **Confidence Adjustment**: Dynamic threshold controls
+- **Backend Management**: Switch between LitServe/RunPod
+- **Export Options**: Download results as JSON/images
+- **Performance Metrics**: Response time and throughput
+- **Error Handling**: User-friendly error messages
+
 ---
 
-## 🔧 Configuration
+## 🧪 Testing
 
-### ⚙️ **Environment Variables**
+### 🔬 **Test Structure**
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MODEL_SIZE` | `yolo11n` | YOLO model size (n/s/m/l/x) |
-| `MAX_BATCH_SIZE` | `4` | Maximum batch size for inference |
-| `BATCH_TIMEOUT` | `0.1` | Batch timeout in seconds |
-| `WORKERS_PER_DEVICE` | `1` | Workers per GPU/CPU |
-| `CONFIDENCE_THRESHOLD` | `0.25` | Default confidence threshold |
-| `DEBUG` | `false` | Enable debug logging |
-| `LITSERVE_HOST` | `0.0.0.0` | LitServe host |
-| `LITSERVE_PORT` | `8000` | LitServe port |
-| `GRADIO_HOST` | `0.0.0.0` | Gradio host |
-| `GRADIO_PORT` | `7860` | Gradio port |
+```bash
+tests/
+├── unit/                    # Unit tests
+│   ├── test_yolo_service.py
+│   ├── test_image_processor.py
+│   └── test_response_formatter.py
+├── integration/             # Integration tests
+│   ├── test_litserve_api.py
+│   ├── test_gradio_app.py
+│   └── test_backend_manager.py
+├── load/                    # Load testing
+│   ├── test_concurrent_requests.py
+│   └── locustfile.py
+└── e2e/                     # End-to-end tests
+    ├── test_complete_workflow.py
+    └── test_ui_interactions.py
+```
+
+### 🏃 **Running Tests**
+
+```bash
+# Install test dependencies
+pip install pytest pytest-asyncio pytest-cov
+
+# Run all tests
+pytest tests/ -v
+
+# Run specific test categories
+pytest tests/unit/ -v
+pytest tests/integration/ -v
+
+# Run with coverage
+pytest tests/ --cov=src --cov-report=html
+
+# Load testing with Locust
+pip install locust
+locust -f tests/load/locustfile.py --host=http://localhost:8000
+```
+
+### 📊 **Test Configuration**
+
+```bash
+# Test with different model sizes
+MODEL_SIZE=s pytest tests/integration/
+MODEL_SIZE=m pytest tests/integration/
+
+# Test with different devices
+DEVICE=cpu pytest tests/unit/
+DEVICE=cuda pytest tests/unit/
+
+# Performance testing
+pytest tests/load/ --benchmark-only
+```
 
 ---
 
@@ -705,43 +713,120 @@ Content-Type: application/json
 
 ### ❌ **Common Issues**
 
-#### **Connection Refused**
+#### **Backend Connection Issues**
 ```bash
-# Check if services are running
-docker-compose ps
+# Check backend status
+python app_ui.py --check-backends
+
+# Validate backend health
 curl http://localhost:8000/health
 
 # Check logs
-docker-compose logs litserve
+tail -f logs/application.log
 ```
 
-#### **Out of Memory**
-```bash
-# Monitor GPU memory
-nvidia-smi
-
-# Reduce batch size
-export MAX_BATCH_SIZE=1
-```
-
-#### **Model Download Failed**
+#### **Model Loading Problems**
 ```bash
 # Clear model cache
 rm -rf ~/.cache/ultralytics
+rm -rf models/*.pt
 
-# Download manually
+# Re-download models
 python -c "from ultralytics import YOLO; YOLO('yolo11n.pt')"
+
+# Check disk space
+df -h
+```
+
+#### **GPU/CUDA Issues**
+```bash
+# Check CUDA availability
+python -c "import torch; print(torch.cuda.is_available())"
+
+# Check GPU memory
+nvidia-smi
+
+# Set CPU mode
+export DEVICE=cpu
+python app_server.py --mode litserve --device cpu
+```
+
+#### **Configuration Problems**
+```bash
+# Validate configuration
+python app_server.py --validate-config
+python app_ui.py --validate-config
+
+# Reset to defaults
+rm -f src/utils/config/user_config.yaml
+
+# Check environment
+python app_server.py --check-env
+```
+
+### 📋 **Debug Commands**
+
+```bash
+# Enable debug logging
+export LOG_LEVEL=debug
+export DEBUG=true
+
+# Start with validation
+python app_server.py --mode litserve --debug --validate-config
+python app_ui.py --debug --check-backends
+
+# Monitor logs in real-time
+tail -f logs/application.log logs/performance.log logs/errors.log
+```
+
+### 🔧 **Performance Optimization**
+
+```bash
+# Optimize for throughput
+export WORKERS_PER_DEVICE=4
+export MAX_BATCH_SIZE=8
+
+# Optimize for latency
+export WORKERS_PER_DEVICE=1
+export MAX_BATCH_SIZE=1
+
+# GPU optimization
+export CUDA_VISIBLE_DEVICES=0
+export MODEL_SIZE=n  # Smaller model for speed
 ```
 
 ---
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+### 🔄 **Development Workflow**
+
+1. **Fork** the repository
+2. **Create** feature branch: `git checkout -b feature/amazing-feature`
+3. **Install** development dependencies: `pip install -r requirements.txt`
+4. **Make** your changes following the project structure
+5. **Test** your changes: `pytest tests/ -v`
+6. **Lint** code: `black src/ tests/` and `flake8 src/ tests/`
+7. **Commit** changes: `git commit -m 'Add amazing feature'`
+8. **Push** to branch: `git push origin feature/amazing-feature`
+9. **Open** a Pull Request
+
+### 📝 **Code Standards**
+
+- Follow PEP 8 style guidelines
+- Add type hints for function parameters and returns
+- Include docstrings for all public functions and classes
+- Write unit tests for new functionality
+- Update documentation for new features
+
+### 🧪 **Testing Guidelines**
+
+```bash
+# Before submitting PR
+pytest tests/ -v --cov=src
+black src/ tests/
+flake8 src/ tests/
+```
 
 ---
 
@@ -751,11 +836,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [Lightning AI](https://lightning.ai/) for LitServe
-- [Gradio](https://gradio.app/) for the amazing UI framework
-- [Ultralytics](https://ultralytics.com/) for YOLOv11
-- [Docker](https://docker.com/) for containerization
+- [Lightning AI](https://lightning.ai/) for LitServe framework
+- [Gradio](https://gradio.app/) for the intuitive UI framework
+- [Ultralytics](https://ultralytics.com/) for YOLOv11 implementation
+- [RunPod](https://runpod.io/) for serverless GPU infrastructure
+- [PyTorch](https://pytorch.org/) for the ML foundation
 
 ---
 
-**⭐ Star this repository if it helped you!**
+**⭐ Star this repository if it helped you build amazing ML applications!**
+
+For questions, issues, or contributions, please visit our [GitHub repository](https://github.com/your-username/gradio-litserve-ml-template).
