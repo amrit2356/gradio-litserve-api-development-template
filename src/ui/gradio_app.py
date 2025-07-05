@@ -1,4 +1,4 @@
-# gradio_app.py - FIXED VERSION
+# gradio_app.py - FIXED VERSION with Examples and Proper API Response Handling
 import os
 import sys
 import time
@@ -27,7 +27,7 @@ settings = get_settings()
 logger = get_module_logger(__name__)
 
 class GradioApp:
-    """Main Gradio application class - FIXED VERSION"""
+    """Main Gradio application class - FIXED VERSION with Examples"""
     
     def __init__(self):
         self.backend_manager = backend_manager
@@ -47,7 +47,13 @@ class GradioApp:
                     'iou_threshold': {'min': 0.01, 'max': 0.99, 'default': 0.45, 'step': 0.01},
                     'max_detections': {'min': 1, 'max': 1000, 'default': 100, 'step': 1}
                 },
-                'response': {'formats': ['detailed', 'minimal'], 'default_format': 'detailed'}
+                'response': {'formats': ['detailed', 'minimal'], 'default_format': 'detailed'},
+                'visualization': {
+                    'bbox_thickness': 3,
+                    'font_size': 16,
+                    'font_color': '#ffffff',
+                    'show_confidence_in_label': True
+                }
             }
         
         self.app_config = self.gradio_config.get('app', {})
@@ -58,7 +64,10 @@ class GradioApp:
         # Initialize state
         self.current_job_id = None
         
-        logger.info("Gradio app initialized")
+        # Get example images
+        self.example_images = self.utils.get_example_images()
+        
+        logger.info("Gradio app initialized with examples")
     
     def create_interface(self) -> gr.Blocks:
         """Create the Gradio interface"""
@@ -89,12 +98,58 @@ class GradioApp:
         .notification-error { background-color: #fee2e2; color: #991b1b; }
         .notification-warning { background-color: #fef3c7; color: #92400e; }
         .notification-info { background-color: #dbeafe; color: #1e40af; }
+        
+        .stats-container {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            margin: 10px 0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .example-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin: 10px 0;
+        }
         """
         
         with gr.Blocks(theme=theme, css=custom_css, title=title) as app:
             # Header
             with gr.Row():
-                gr.Markdown(f"# {title}")
+                gr.Markdown(f"""
+                # 🔍 {title}
+                
+                **Scalable, Production-Ready Object Detection Pipeline**
+                
+                Upload an image or use examples below to detect objects using YOLOv11 with LitServe or RunPod backends.
+                """)
                 
             # Backend status
             with gr.Row():
@@ -102,7 +157,7 @@ class GradioApp:
                 refresh_status_btn = gr.Button("🔄 Refresh Status", size="sm")
             
             # Main interface
-            with gr.Tab("Object Detection"):
+            with gr.Tab("🎯 Object Detection"):
                 with gr.Row():
                     # Left column - Input
                     with gr.Column(scale=1):
@@ -114,22 +169,32 @@ class GradioApp:
                             height=400
                         )
                         
+                        # Example images
+                        if self.example_images:
+                            gr.Markdown("### 📸 Example Images")
+                            with gr.Row():
+                                example_btns = []
+                                for i, (img_path, description) in enumerate(self.example_images[:3]):
+                                    btn = gr.Button(f"Example {i+1}", size="sm")
+                                    example_btns.append((btn, img_path))
+                        
                         # Backend selection
                         backend_choice = gr.Radio(
                             choices=self._get_backend_choices(),
                             value=self._get_default_backend(),
-                            label="Backend",
+                            label="🔧 Backend",
                             info="Choose between live server or serverless inference"
                         )
                         
                         # Model settings
-                        with gr.Accordion("Model Settings", open=False):
+                        with gr.Accordion("⚙️ Model Settings", open=False):
                             confidence_slider = gr.Slider(
                                 minimum=self.detection_config.get('confidence_threshold', {}).get('min', 0.01),
                                 maximum=self.detection_config.get('confidence_threshold', {}).get('max', 0.99),
                                 value=self.detection_config.get('confidence_threshold', {}).get('default', 0.25),
                                 step=self.detection_config.get('confidence_threshold', {}).get('step', 0.01),
-                                label="Confidence Threshold"
+                                label="Confidence Threshold",
+                                info="Minimum confidence score for detections"
                             )
                             
                             iou_slider = gr.Slider(
@@ -137,7 +202,8 @@ class GradioApp:
                                 maximum=self.detection_config.get('iou_threshold', {}).get('max', 0.99),
                                 value=self.detection_config.get('iou_threshold', {}).get('default', 0.45),
                                 step=self.detection_config.get('iou_threshold', {}).get('step', 0.01),
-                                label="IoU Threshold"
+                                label="IoU Threshold",
+                                info="Intersection over Union threshold for NMS"
                             )
                             
                             max_detections_slider = gr.Slider(
@@ -145,12 +211,13 @@ class GradioApp:
                                 maximum=self.detection_config.get('max_detections', {}).get('max', 1000),
                                 value=self.detection_config.get('max_detections', {}).get('default', 100),
                                 step=self.detection_config.get('max_detections', {}).get('step', 1),
-                                label="Max Detections"
+                                label="Max Detections",
+                                info="Maximum number of detections to return"
                             )
                         
                         # Action buttons
                         with gr.Row():
-                            detect_btn = gr.Button("🔍 Detect Objects", variant="primary")
+                            detect_btn = gr.Button("🔍 Detect Objects", variant="primary", size="lg")
                             clear_btn = gr.Button("🗑️ Clear", variant="secondary")
                     
                     # Right column - Output
@@ -158,35 +225,90 @@ class GradioApp:
                         # Status and notifications
                         status_output = gr.HTML()
                         
+                        # Detection statistics
+                        stats_output = gr.HTML()
+                        
                         # Results tabs
                         with gr.Tabs():
-                            with gr.Tab("Annotated Image"):
-                                output_image = gr.Image(label="Detection Results", type="pil")
-                            
-                            with gr.Tab("Detection Table"):
-                                detection_table = gr.Dataframe(
-                                    headers=["ID", "Class", "Confidence", "X1", "Y1", "X2", "Y2", "Width", "Height"],
-                                    label="Detections"
+                            with gr.Tab("🖼️ Annotated Image"):
+                                output_image = gr.Image(
+                                    label="Detection Results", 
+                                    type="pil",
+                                    height=500
                                 )
                             
-                            with gr.Tab("Raw Response"):
+                            with gr.Tab("📊 Detection Table"):
+                                detection_table = gr.Dataframe(
+                                    headers=["ID", "Class", "Confidence", "X1", "Y1", "X2", "Y2", "Width", "Height"],
+                                    label="Detection Details",
+                                    interactive=False,
+                                    wrap=True
+                                )
+                            
+                            with gr.Tab("📈 Confidence Chart"):
+                                confidence_chart = gr.Plot(label="Confidence Distribution")
+                            
+                            with gr.Tab("🥧 Class Distribution"):
+                                class_chart = gr.Plot(label="Class Distribution")
+                            
+                            with gr.Tab("📄 Raw Response"):
                                 raw_response = gr.JSON(label="API Response")
+                        
+                        # Export options
+                        with gr.Accordion("💾 Export Results", open=False):
+                            with gr.Row():
+                                export_json_btn = gr.Button("📄 Export JSON")
+                                export_csv_btn = gr.Button("📊 Export CSV")
+                                export_image_btn = gr.Button("🖼️ Save Image")
+                            
+                            export_output = gr.File(label="Download")
             
             # Debug Tab
-            with gr.Tab("Debug"):
+            with gr.Tab("🔧 Debug"):
                 with gr.Row():
-                    debug_info = gr.JSON(label="Debug Information")
-                    refresh_debug_btn = gr.Button("🔄 Refresh Debug Info")
+                    with gr.Column():
+                        debug_info = gr.JSON(label="Debug Information")
+                        refresh_debug_btn = gr.Button("🔄 Refresh Debug Info")
+                    
+                    with gr.Column():
+                        gr.Markdown("""
+                        ### Debug Information
+                        
+                        This tab shows:
+                        - Backend manager status
+                        - Configuration details
+                        - Job history
+                        - Current job ID
+                        
+                        Use this for troubleshooting connection issues.
+                        """)
+                        
+                        # Test buttons
+                        test_litserve_btn = gr.Button("🧪 Test LitServe")
+                        test_runpod_btn = gr.Button("🧪 Test RunPod")
+                        test_output = gr.Textbox(label="Test Results", lines=10, max_lines=15)
             
-            # Event handlers
+            # Setup event handlers
             self._setup_event_handlers(
                 # Input components
                 image_input, backend_choice, confidence_slider, iou_slider, max_detections_slider,
                 # Buttons
                 detect_btn, clear_btn, refresh_status_btn, refresh_debug_btn,
+                export_json_btn, export_csv_btn, export_image_btn,
+                test_litserve_btn, test_runpod_btn,
                 # Output components
-                backend_status, status_output, output_image, detection_table, raw_response, debug_info
+                backend_status, status_output, stats_output, output_image, 
+                detection_table, confidence_chart, class_chart, raw_response, 
+                debug_info, export_output, test_output
             )
+            
+            # Setup example image handlers
+            if self.example_images:
+                for btn, img_path in example_btns:
+                    btn.click(
+                        fn=lambda path=img_path: Image.open(path),
+                        outputs=[image_input]
+                    )
         
         return app
     
@@ -230,14 +352,20 @@ class GradioApp:
             for backend_type, status in health_status.items():
                 is_healthy = status.get('is_healthy', False)
                 error_message = status.get('error_message', '')
+                response_time = status.get('response_time')
                 
                 if is_healthy:
                     icon = "✅"
-                    status_text = "Healthy"
+                    if response_time:
+                        status_text = f"Healthy ({response_time:.2f}s)"
+                    else:
+                        status_text = "Healthy"
                     color = "#10b981"
                 else:
                     icon = "❌"
-                    status_text = f"Unhealthy: {error_message}"
+                    status_text = f"Unhealthy"
+                    if error_message:
+                        status_text += f": {error_message[:30]}..."
                     color = "#ef4444"
                 
                 backend_name = backend_type.replace('_', ' ').title()
@@ -256,12 +384,51 @@ class GradioApp:
             logger.error(f"Error getting backend status: {e}")
             return f"<div style='color: red;'>Error loading backend status: {e}</div>"
     
+    def _create_stats_html(self, detections: List[Dict[str, Any]]) -> str:
+        """Create detection statistics HTML"""
+        try:
+            stats = self.utils.create_summary_stats(detections)
+            
+            html = f"""
+            <div class='stats-container'>
+                <h3>📊 Detection Statistics</h3>
+                <div class='stats-grid'>
+                    <div class='stat-item'>
+                        <span class='stat-value'>{stats.get('total_detections', 0)}</span>
+                        <span class='stat-label'>Total Objects</span>
+                    </div>
+                    <div class='stat-item'>
+                        <span class='stat-value'>{stats.get('unique_classes', 0)}</span>
+                        <span class='stat-label'>Unique Classes</span>
+                    </div>
+                    <div class='stat-item'>
+                        <span class='stat-value'>{stats.get('avg_confidence', 0):.3f}</span>
+                        <span class='stat-label'>Avg Confidence</span>
+                    </div>
+                    <div class='stat-item'>
+                        <span class='stat-value'>{stats.get('max_confidence', 0):.3f}</span>
+                        <span class='stat-label'>Max Confidence</span>
+                    </div>
+                </div>
+            </div>
+            """
+            
+            return html
+            
+        except Exception as e:
+            logger.error(f"Error creating stats HTML: {e}")
+            return ""
+    
     def _setup_event_handlers(self, *components):
         """Setup event handlers for all components"""
         try:
             (image_input, backend_choice, confidence_slider, iou_slider, max_detections_slider,
              detect_btn, clear_btn, refresh_status_btn, refresh_debug_btn,
-             backend_status, status_output, output_image, detection_table, raw_response, debug_info) = components
+             export_json_btn, export_csv_btn, export_image_btn,
+             test_litserve_btn, test_runpod_btn,
+             backend_status, status_output, stats_output, output_image, 
+             detection_table, confidence_chart, class_chart, raw_response, 
+             debug_info, export_output, test_output) = components
             
             # Detection button
             detect_btn.click(
@@ -270,7 +437,8 @@ class GradioApp:
                     image_input, backend_choice, confidence_slider, iou_slider, max_detections_slider
                 ],
                 outputs=[
-                    status_output, output_image, detection_table, raw_response
+                    status_output, stats_output, output_image, detection_table,
+                    confidence_chart, class_chart, raw_response
                 ]
             )
             
@@ -279,7 +447,8 @@ class GradioApp:
                 fn=self.clear_results,
                 inputs=[],
                 outputs=[
-                    image_input, output_image, detection_table, raw_response, status_output
+                    image_input, output_image, detection_table, confidence_chart,
+                    class_chart, raw_response, status_output, stats_output
                 ]
             )
             
@@ -297,6 +466,38 @@ class GradioApp:
                 outputs=[debug_info]
             )
             
+            # Export buttons
+            export_json_btn.click(
+                fn=self.export_json,
+                inputs=[raw_response],
+                outputs=[export_output]
+            )
+            
+            export_csv_btn.click(
+                fn=self.export_csv,
+                inputs=[detection_table],
+                outputs=[export_output]
+            )
+            
+            export_image_btn.click(
+                fn=self.export_image,
+                inputs=[output_image],
+                outputs=[export_output]
+            )
+            
+            # Test buttons
+            test_litserve_btn.click(
+                fn=self.test_backend,
+                inputs=[gr.State("litserve")],
+                outputs=[test_output]
+            )
+            
+            test_runpod_btn.click(
+                fn=self.test_backend,
+                inputs=[gr.State("runpod")],
+                outputs=[test_output]
+            )
+            
             logger.info("Event handlers setup complete")
             
         except Exception as e:
@@ -309,7 +510,7 @@ class GradioApp:
             
             # Validate inputs
             if image is None:
-                return self._create_error_outputs("Please upload an image")
+                return self._create_error_outputs("Please upload an image or select an example")
             
             if backend_type == "none":
                 return self._create_error_outputs("No backend selected")
@@ -317,6 +518,10 @@ class GradioApp:
             # Validate image
             if not isinstance(image, Image.Image):
                 return self._create_error_outputs("Invalid image format")
+            
+            is_valid, validation_msg = self.utils.validate_image(image)
+            if not is_valid:
+                return self._create_error_outputs(validation_msg)
             
             # Prepare request data
             request_data = {
@@ -355,22 +560,14 @@ class GradioApp:
             return self._create_error_outputs(f"Detection failed: {str(e)}")
     
     def _create_success_outputs(self, result: Dict[str, Any], original_image: Image.Image):
-        """Create success outputs for detection"""
+        """Create success outputs for detection - FIXED for API response format"""
         try:
             logger.info("Creating success outputs")
             
-            # Extract detections - handle different response formats
-            detections = []
-            if isinstance(result, dict):
-                # Try different possible keys
-                if 'detections' in result:
-                    detections = result['detections']
-                elif 'results' in result and isinstance(result['results'], dict):
-                    detections = result['results'].get('detections', [])
-                elif 'results' in result and isinstance(result['results'], list):
-                    detections = result['results']
+            # Parse API response using the fixed utils function
+            detections = self.utils.parse_api_response(result)
             
-            logger.info(f"Extracted {len(detections)} detections")
+            logger.info(f"Parsed {len(detections)} detections")
             
             # Create annotated image
             annotated_image = self.utils.draw_bounding_boxes(original_image, detections)
@@ -378,13 +575,23 @@ class GradioApp:
             # Create detection table
             detection_df = self.utils.create_detection_table(detections)
             
+            # Create charts
+            confidence_chart = self.utils.create_confidence_chart(detections)
+            class_chart = self.utils.create_class_distribution_chart(detections)
+            
+            # Create statistics
+            stats_html = self._create_stats_html(detections)
+            
             # Status message
             status_msg = f"✅ Detection completed: {len(detections)} objects found"
             
             return (
                 f"<div class='notification notification-success'>{status_msg}</div>",
+                stats_html,
                 annotated_image,
                 detection_df,
+                confidence_chart,
+                class_chart,
                 result
             )
             
@@ -398,8 +605,11 @@ class GradioApp:
         
         return (
             f"<div class='notification notification-error'>❌ {error_message}</div>",
+            "",  # stats_output
             None,  # output_image
-            pd.DataFrame(),  # detection_table
+            pd.DataFrame(columns=["ID", "Class", "Confidence", "X1", "Y1", "X2", "Y2", "Width", "Height"]),  # detection_table
+            go.Figure(),  # confidence_chart
+            go.Figure(),  # class_chart
             {"error": error_message}  # raw_response
         )
     
@@ -408,9 +618,12 @@ class GradioApp:
         return (
             None,  # image_input
             None,  # output_image
-            pd.DataFrame(),  # detection_table
+            pd.DataFrame(columns=["ID", "Class", "Confidence", "X1", "Y1", "X2", "Y2", "Width", "Height"]),  # detection_table
+            go.Figure(),  # confidence_chart
+            go.Figure(),  # class_chart
             {},  # raw_response
-            ""   # status_output
+            "",  # status_output
+            ""   # stats_output
         )
     
     def refresh_backend_status(self):
@@ -435,6 +648,7 @@ class GradioApp:
         """Get debug information"""
         try:
             debug_data = {
+                "timestamp": datetime.now().isoformat(),
                 "backend_manager": {
                     "available_backends": self.backend_manager.get_available_backends(),
                     "health_status": self.backend_manager.get_backend_health(),
@@ -442,17 +656,110 @@ class GradioApp:
                 },
                 "configuration": {
                     "gradio_config": self.gradio_config,
-                    "backends_config": self.backend_manager.backends_config
+                    "backends_config": getattr(self.backend_manager, 'backends_config', {})
                 },
                 "current_job_id": self.current_job_id,
-                "timestamp": datetime.now().isoformat()
+                "example_images_count": len(self.example_images),
+                "system_info": {
+                    "python_path": sys.path[:3],  # First 3 paths
+                    "working_directory": os.getcwd()
+                }
             }
             
             return debug_data
             
         except Exception as e:
             logger.error(f"Error getting debug info: {e}")
-            return {"error": str(e)}
+            return {"error": str(e), "timestamp": datetime.now().isoformat()}
+    
+    def test_backend(self, backend_type: str):
+        """Test specific backend"""
+        try:
+            test_results = []
+            test_results.append(f"🧪 Testing {backend_type} backend...")
+            
+            if backend_type == "litserve":
+                if self.backend_manager.litserve_client:
+                    health = self.backend_manager.litserve_client.sync_health_check()
+                    test_results.append(f"Health check: {'✅ PASS' if health else '❌ FAIL'}")
+                    
+                    if health:
+                        try:
+                            info = self.backend_manager.litserve_client.get_info()
+                            test_results.append(f"Info endpoint: ✅ PASS - {info}")
+                        except Exception as e:
+                            test_results.append(f"Info endpoint: ❌ FAIL - {e}")
+                else:
+                    test_results.append("❌ LitServe client not initialized")
+            
+            elif backend_type == "runpod":
+                if self.backend_manager.runpod_client:
+                    health = self.backend_manager.runpod_client.sync_health_check()
+                    test_results.append(f"Health check: {'✅ PASS' if health else '❌ FAIL'}")
+                else:
+                    test_results.append("❌ RunPod client not initialized")
+            
+            return "\n".join(test_results)
+            
+        except Exception as e:
+            return f"❌ Test failed: {e}"
+    
+    def export_json(self, raw_response):
+        """Export results to JSON"""
+        try:
+            if not raw_response or raw_response.get('error'):
+                return None
+            
+            # Parse detections from response
+            detections = self.utils.parse_api_response(raw_response)
+            
+            # Create export data
+            export_data = self.utils.export_results_to_json(detections, raw_response)
+            
+            # Save to file
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"detection_results_{timestamp}.json"
+            
+            with open(filename, 'w') as f:
+                f.write(export_data)
+            
+            return filename
+            
+        except Exception as e:
+            logger.error(f"JSON export error: {e}")
+            return None
+    
+    def export_csv(self, detection_table):
+        """Export results to CSV"""
+        try:
+            if detection_table.empty:
+                return None
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"detection_results_{timestamp}.csv"
+            
+            detection_table.to_csv(filename, index=False)
+            return filename
+            
+        except Exception as e:
+            logger.error(f"CSV export error: {e}")
+            return None
+    
+    def export_image(self, output_image):
+        """Export annotated image"""
+        try:
+            if output_image is None:
+                return None
+            
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"annotated_image_{timestamp}.jpg"
+            
+            output_image.save(filename, "JPEG", quality=95)
+            return filename
+            
+        except Exception as e:
+            logger.error(f"Image export error: {e}")
+            return None
     
     def run(self):
         """Run the Gradio app"""
@@ -474,7 +781,9 @@ class GradioApp:
                 share=share,
                 debug=debug,
                 show_api=True,
-                show_error=True
+                show_error=True,
+                favicon_path=None,
+                ssl_verify=False
             )
             
         except Exception as e:
