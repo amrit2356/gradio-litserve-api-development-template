@@ -10,6 +10,23 @@
 [![RunPod](https://img.shields.io/badge/RunPod-Serverless-purple.svg)](https://runpod.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+<div align="center">
+  <a href="https://pytorch.org/">
+    <img src="https://pytorch.org/assets/images/pytorch-logo.png" alt="PyTorch" height="50" style="margin: 0 15px;">
+  </a>
+  <a href="https://docs.ultralytics.com/">
+    <img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" alt="Ultralytics" height="50" style="margin: 0 15px;">
+  </a>
+  <a href="https://gradio.app/">
+    <img src="https://www.gradio.app/_app/immutable/assets/gradio.CHB5adID.svg" alt="Gradio" height="50" style="margin: 0 15px;">
+  </a>
+  <a href="https://github.com/Lightning-AI/litserve">
+    <img src="https://lightning.ai/static/media/logo-with-text-dark.bdcfdf86bccb9812ed1d3ec873e9e771.svg" alt="Lightning AI" height="50" style="margin: 0 15px;">
+  </a>
+  <a href="https://runpod.io/">
+    <img src="https://mintlify.s3.us-west-1.amazonaws.com/runpod-b18f5ded/logo/runpod-logo-black.svg" alt="RunPod" height="50" style="margin: 0 15px;">
+  </a>
+</div>
 </div>
 
 ## 📋 Table of Contents
@@ -837,7 +854,7 @@ flake8 src/ tests/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## �� Acknowledgments
+## 🙏 Acknowledgments
 
 - ⚡ [Lightning AI](https://lightning.ai/) for LitServe framework
 - 🎨 [Gradio](https://gradio.app/) for the intuitive UI framework
