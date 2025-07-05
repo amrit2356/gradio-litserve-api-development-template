@@ -1,6 +1,6 @@
 # 🔍 AI/ML Project Deployment Template
 
-> **Scalable, Production-Ready YOLOv11 Object Detection Pipeline with Gradio Frontend and LitServe Backend**
+> **Scalable, Production-Ready YOLOv11 Object Detection Pipeline with Gradio Frontend and LitServe(for Live Server) & Runpod(Serverless) as Backend**
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
