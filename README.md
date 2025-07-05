@@ -1,6 +1,7 @@
-# 🔍 AI/ML Project Deployment Template
+<div align="center">
 
-> **Scalable, Production-Ready YOLOv11 Object Detection Pipeline with Gradio Frontend and LitServe(for Live Server) & Runpod(Serverless) as Backend**
+# 🔍 AI/ML Project Deployment Template
+*Scalable, Production-Ready YOLOv11 Object Detection Pipeline with Gradio Frontend and LitServe(for Live Server) & Runpod(Serverless) as Backend*
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
@@ -8,6 +9,8 @@
 [![Gradio](https://img.shields.io/badge/Gradio-Frontend-orange.svg)](https://gradio.app)
 [![RunPod](https://img.shields.io/badge/RunPod-Serverless-purple.svg)](https://runpod.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+</div>
 
 ## 📋 Table of Contents
 
@@ -834,13 +837,13 @@ flake8 src/ tests/
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## �� Acknowledgments
 
-- [Lightning AI](https://lightning.ai/) for LitServe framework
-- [Gradio](https://gradio.app/) for the intuitive UI framework
-- [Ultralytics](https://ultralytics.com/) for YOLOv11 implementation
-- [RunPod](https://runpod.io/) for serverless GPU infrastructure
-- [PyTorch](https://pytorch.org/) for the ML foundation
+- ⚡ [Lightning AI](https://lightning.ai/) for LitServe framework
+- 🎨 [Gradio](https://gradio.app/) for the intuitive UI framework
+- 🔍 [Ultralytics](https://ultralytics.com/) for YOLOv11 implementation
+- ☁️ [RunPod](https://runpod.io/) for serverless GPU infrastructure
+- 🔥 [PyTorch](https://pytorch.org/) for the ML foundation
 
 ---
 
