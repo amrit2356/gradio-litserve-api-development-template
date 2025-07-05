@@ -11,9 +11,9 @@
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 <div align="center" style="display: flex; justify-content: center; align-items: center; flex-wrap: nowrap; gap: 40px; padding: 20px 0;">
-  <a href="https://pytorch.org/">
-    <img src="https://pytorch.org/assets/images/pytorch-logo.png" alt="PyTorch" style="width: 60px; height: 60px; object-fit: contain;">
-  </a>
+  <!-- <a href="https://pytorch.org/">
+    <img src="https://pytorch.org/assets/images/pytorch-logo.png" alt="PyTorch" style="width: 120px; height: 120px; object-fit: contain;">
+  </a> -->
   <a href="https://docs.ultralytics.com/">
     <img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" alt="Ultralytics" style="width: 120px; height: 120px; object-fit: contain;">
   </a>
