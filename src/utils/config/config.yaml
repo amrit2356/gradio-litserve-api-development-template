@@ -28,6 +28,7 @@ model:
     auto_detect: true
     preferred: "auto"  # auto, cpu, cuda
     fallback: "cpu"
+    half_precision_enabled: false
   inference:
     confidence_threshold: 0.25
     iou_threshold: 0.45
@@ -68,7 +69,7 @@ response:
     - "detailed"
     - "minimal"
     - "compact"
-  default_format: "detailed"
+  default_format: "compact"
   include_metadata: true
   include_timing: true
   decimal_precision: 3
@@ -147,7 +148,7 @@ performance:
 # Development and debugging
 development:
   debug_mode: false
-  hot_reload: false
+  hot_reload: true
   auto_reload_config: true
   enable_debug_endpoints: false
   mock_model: false
@@ -196,8 +197,8 @@ features:
   enable_health_checks: true
   enable_metrics_collection: true
   enable_auto_scaling: false
-  enable_model_switching: false
-  enable_custom_models: false
+  enable_model_switching: true
+  enable_custom_models: true
 
 # Monitoring and alerts
 monitoring:
@@ -310,13 +311,13 @@ gradio:
         show_confidence_slider: true
         show_iou_slider: true
         show_max_detections: true
-        show_advanced_options: false
+        show_advanced_options: true
         
       output_settings:
         show_response_format: true
         show_include_metadata: true
         show_include_performance: true
-        show_bbox_format: false
+        show_bbox_format: true
         
       results_display:
         show_annotated_image: true
@@ -372,7 +373,7 @@ gradio:
       - "detailed"
       - "minimal"
       - "compact"
-    default_format: "detailed"
+    default_format: "compact"
     
     bbox_formats:
       - "xyxy"
@@ -444,11 +445,11 @@ gradio:
   
   # Feature flags
   features:
-    enable_batch_processing: false
-    enable_video_processing: false
-    enable_real_time_detection: false
-    enable_model_comparison: false
-    enable_custom_models: false
+    enable_batch_processing: true
+    enable_video_processing: true
+    enable_real_time_detection: true
+    enable_model_comparison: true
+    enable_custom_models: true
     
     enable_export_results: true
     export_formats: ["json", "csv", "xml"]

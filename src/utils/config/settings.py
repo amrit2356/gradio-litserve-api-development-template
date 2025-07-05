@@ -227,6 +227,10 @@ class ModelSettings(BaseSettings):
         return self.get('device.fallback', 'cpu')
     
     @property
+    def half_precision_enabled(self) -> str:
+        return self.get('device.half_precision_enabled', 'false')
+    
+    @property
     def confidence_threshold(self) -> float:
         return self.get('inference.confidence_threshold', 0.25)
     

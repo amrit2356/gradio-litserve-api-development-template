@@ -36,6 +36,7 @@ class YOLOModel:
         self.max_detections = model_config.max_detections
         self.image_size = model_config.image_size
         self.warmup_enabled = model_config.warmup_enabled
+        self.half_precision_enabled = model_config.half_precision_enabled
     
     def _get_device(self, device: str) -> str:
         """Determine the appropriate device"""
@@ -44,6 +45,13 @@ class YOLOModel:
                 return "cuda" if torch.cuda.is_available() else settings.model.device_fallback
             else:
                 return settings.model.device_fallback
+        
+        if device == 'cuda':
+            # TODO: if cudnn is installed: enable cudnn
+            torch.backends.cudnn.enabled = True
+            torch.backends.cudnn.benchmark = True
+            torch.backends.cudnn.deterministic = False
+        
         return device
     
     def load_model(self) -> None:
@@ -61,6 +69,9 @@ class YOLOModel:
             self.model.to(self.device)
             self.model.eval()
             
+            if self.half_precision_enabled:
+                self.model.half()
+
             if self.warmup_enabled:
                 self._warmup()
             
@@ -106,15 +117,19 @@ class YOLOModel:
         iou = iou or self.iou_threshold
         
         try:
-            results = self.model.predict(
-                source=image,
-                conf=conf,
-                iou=iou,
-                verbose=False,
-                save=False,
-                imgsz=self.image_size
-            )
+            with torch.no_grad():
+                results = self.model.predict(
+                    source=image,
+                    conf=conf,
+                    iou=iou,
+                    verbose=False,
+                    save=False,
+                    imgsz=self.image_size
+                )
             
+            if self.device == 'cuda':
+                torch.cuda.empty_cache()
+
             return self._extract_detections(results)
             
         except Exception as e:
