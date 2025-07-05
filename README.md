@@ -12,19 +12,19 @@
 
 <div align="center">
   <a href="https://pytorch.org/">
-    <img src="https://pytorch.org/assets/images/pytorch-logo.png" alt="PyTorch" height="50" style="margin: 0 15px;">
+    <img src="https://pytorch.org/assets/images/pytorch-logo.png" alt="PyTorch" style="width: 100px; height: 50px; object-fit: contain; margin: 0 15px;">
   </a>
   <a href="https://docs.ultralytics.com/">
-    <img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" alt="Ultralytics" height="50" style="margin: 0 15px;">
+    <img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" alt="Ultralytics" style="width: 100px; height: 50px; object-fit: contain; margin: 0 15px;">
   </a>
   <a href="https://gradio.app/">
-    <img src="https://www.gradio.app/_app/immutable/assets/gradio.CHB5adID.svg" alt="Gradio" height="50" style="margin: 0 15px;">
+    <img src="https://www.gradio.app/_app/immutable/assets/gradio.CHB5adID.svg" alt="Gradio" style="width: 100px; height: 50px; object-fit: contain; margin: 0 15px;">
   </a>
   <a href="https://github.com/Lightning-AI/litserve">
-    <img src="https://lightning.ai/static/media/logo-with-text-dark.bdcfdf86bccb9812ed1d3ec873e9e771.svg" alt="Lightning AI" height="50" style="margin: 0 15px;">
+    <img src="https://lightning.ai/static/media/logo-with-text-dark.bdcfdf86bccb9812ed1d3ec873e9e771.svg" alt="Lightning AI" style="width: 100px; height: 50px; object-fit: contain; margin: 0 15px;">
   </a>
   <a href="https://runpod.io/">
-    <img src="https://mintlify.s3.us-west-1.amazonaws.com/runpod-b18f5ded/logo/runpod-logo-black.svg" alt="RunPod" height="50" style="margin: 0 15px;">
+    <img src="https://mintlify.s3.us-west-1.amazonaws.com/runpod-b18f5ded/logo/runpod-logo-black.svg" alt="RunPod" style="width: 100px; height: 50px; object-fit: contain; margin: 0 15px;">
   </a>
 </div>
 </div>
