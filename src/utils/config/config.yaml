@@ -58,9 +58,9 @@ image_processing:
     maintain_aspect_ratio: true
     target_size: null
   validation:
-    strict_mode: true
-    check_dimensions: true
-    check_file_size: true
+    strict_mode: false
+    check_dimensions: false
+    check_file_size: false
 
 # Response formatting configuration
 response:
