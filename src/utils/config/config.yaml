@@ -19,11 +19,11 @@ model:
     - "l"
     - "x"
   model_paths:
-    n: "yolo11n.pt"
-    s: "yolo11s.pt"
-    m: "yolo11m.pt"
-    l: "yolo11l.pt"
-    x: "yolo11x.pt"
+    n: "./models/yolo11n.pt"
+    s: "./models/yolo11s.pt"
+    m: "./models/yolo11m.pt"
+    l: "./models/yolo11l.pt"
+    x: "./models/yolo11x.pt"
   device:
     auto_detect: true
     preferred: "auto"  # auto, cpu, cuda

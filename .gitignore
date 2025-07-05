@@ -207,3 +207,5 @@ cython_debug/
 
 # additional folders
 models/
+logs/
+cache/

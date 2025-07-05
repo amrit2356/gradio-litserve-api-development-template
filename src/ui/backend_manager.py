@@ -1,4 +1,4 @@
-# src/clients/backend_client.py
+# src/clients/backend_client.py - FIXED VERSION
 import asyncio
 import json
 import os
@@ -10,6 +10,8 @@ from enum import Enum
 import requests
 import aiohttp
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor
+import threading
 
 from src.utils.config.settings import get_settings
 from src.utils.log.logger import get_module_logger
@@ -86,11 +88,52 @@ class LitServeClient:
         self.timeout = config.get("request_timeout", 30)
         self.health_status = BackendHealthStatus(BackendType.LITSERVE)
         
-    async def health_check(self) -> bool:
-        """Check if LitServe backend is healthy"""
+        # Add default endpoints if not provided
+        if not self.endpoints:
+            self.endpoints = {
+                "health": "/health",
+                "predict": "/predict",
+                "info": "/info"
+            }
+        
+        logger.info(f"LitServe client initialized with base_url: {self.base_url}")
+    
+    def sync_health_check(self) -> bool:
+        """Synchronous health check for LitServe backend"""
         try:
             start_time = time.time()
             health_url = f"{self.base_url}{self.endpoints.get('health', '/health')}"
+            
+            logger.debug(f"Checking LitServe health at: {health_url}")
+            response = requests.get(health_url, timeout=5)
+            response_time = time.time() - start_time
+            
+            if response.status_code == 200:
+                self.health_status.is_healthy = True
+                self.health_status.response_time = response_time
+                self.health_status.error_message = None
+                self.health_status.consecutive_failures = 0
+                logger.info(f"LitServe health check passed ({response_time:.2f}s)")
+                return True
+            else:
+                raise Exception(f"Health check failed with status {response.status_code}")
+                
+        except Exception as e:
+            self.health_status.is_healthy = False
+            self.health_status.error_message = str(e)
+            self.health_status.consecutive_failures += 1
+            logger.error(f"LitServe health check failed: {e}")
+            return False
+        finally:
+            self.health_status.last_check = datetime.now()
+    
+    async def health_check(self) -> bool:
+        """Asynchronous health check for LitServe backend"""
+        try:
+            start_time = time.time()
+            health_url = f"{self.base_url}{self.endpoints.get('health', '/health')}"
+            
+            logger.debug(f"Checking LitServe health at: {health_url}")
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(health_url, timeout=5) as response:
@@ -115,10 +158,40 @@ class LitServeClient:
         finally:
             self.health_status.last_check = datetime.now()
     
-    async def predict(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Send prediction request to LitServe"""
+    def sync_predict(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Synchronous prediction request to LitServe"""
         try:
             predict_url = f"{self.base_url}{self.endpoints.get('predict', '/predict')}"
+            
+            logger.debug(f"Sending prediction request to: {predict_url}")
+            logger.debug(f"Request data keys: {list(request_data.keys())}")
+            
+            response = requests.post(
+                predict_url,
+                json=request_data,
+                timeout=self.timeout,
+                headers={"Content-Type": "application/json"}
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"LitServe prediction successful")
+                return result
+            else:
+                error_text = response.text
+                logger.error(f"LitServe prediction failed with status {response.status_code}: {error_text}")
+                raise Exception(f"Prediction failed with status {response.status_code}: {error_text}")
+                
+        except Exception as e:
+            logger.error(f"LitServe prediction failed: {e}")
+            raise
+    
+    async def predict(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Asynchronous prediction request to LitServe"""
+        try:
+            predict_url = f"{self.base_url}{self.endpoints.get('predict', '/predict')}"
+            
+            logger.debug(f"Sending async prediction request to: {predict_url}")
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -128,13 +201,15 @@ class LitServeClient:
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
+                        logger.info(f"LitServe async prediction successful")
                         return result
                     else:
                         error_text = await response.text()
+                        logger.error(f"LitServe async prediction failed with status {response.status}: {error_text}")
                         raise Exception(f"Prediction failed with status {response.status}: {error_text}")
                         
         except Exception as e:
-            logger.error(f"LitServe prediction failed: {e}")
+            logger.error(f"LitServe async prediction failed: {e}")
             raise
     
     def get_info(self) -> Dict[str, Any]:
@@ -169,6 +244,8 @@ class RunPodClient:
             logger.warning("RunPod API key not found. Set RUNPOD_API_KEY environment variable.")
         if not self.endpoint_id:
             logger.warning("RunPod endpoint ID not found. Set RUNPOD_ENDPOINT_ID environment variable.")
+        
+        logger.info(f"RunPod client initialized with endpoint: {self.endpoint_id}")
     
     def _get_headers(self) -> Dict[str, str]:
         """Get headers for RunPod API requests"""
@@ -177,8 +254,8 @@ class RunPodClient:
             "Content-Type": "application/json"
         }
     
-    async def health_check(self) -> bool:
-        """Check if RunPod backend is accessible"""
+    def sync_health_check(self) -> bool:
+        """Synchronous health check for RunPod backend"""
         try:
             if not self.api_key or not self.endpoint_id:
                 self.health_status.is_healthy = False
@@ -188,6 +265,49 @@ class RunPodClient:
             start_time = time.time()
             # Test with a simple status check
             url = f"{self.base_url}/{self.endpoint_id}/health"
+            
+            logger.debug(f"Checking RunPod health at: {url}")
+            
+            response = requests.get(
+                url,
+                headers=self._get_headers(),
+                timeout=10
+            )
+            
+            response_time = time.time() - start_time
+            
+            if response.status_code in [200, 404]:  # 404 is acceptable for health check
+                self.health_status.is_healthy = True
+                self.health_status.response_time = response_time
+                self.health_status.error_message = None
+                self.health_status.consecutive_failures = 0
+                logger.info(f"RunPod health check passed ({response_time:.2f}s)")
+                return True
+            else:
+                raise Exception(f"Health check failed with status {response.status_code}")
+                
+        except Exception as e:
+            self.health_status.is_healthy = False
+            self.health_status.error_message = str(e)
+            self.health_status.consecutive_failures += 1
+            logger.error(f"RunPod health check failed: {e}")
+            return False
+        finally:
+            self.health_status.last_check = datetime.now()
+    
+    async def health_check(self) -> bool:
+        """Asynchronous health check for RunPod backend"""
+        try:
+            if not self.api_key or not self.endpoint_id:
+                self.health_status.is_healthy = False
+                self.health_status.error_message = "Missing API key or endpoint ID"
+                return False
+            
+            start_time = time.time()
+            # Test with a simple status check
+            url = f"{self.base_url}/{self.endpoint_id}/health"
+            
+            logger.debug(f"Checking RunPod health at: {url}")
             
             async with aiohttp.ClientSession() as session:
                 async with session.get(
@@ -216,8 +336,8 @@ class RunPodClient:
         finally:
             self.health_status.last_check = datetime.now()
     
-    async def run_sync(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Run synchronous request on RunPod"""
+    def sync_run_sync(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Synchronous request to RunPod"""
         try:
             url = f"{self.base_url}/{self.endpoint_id}/runsync"
             
@@ -225,6 +345,40 @@ class RunPodClient:
                 "input": request_data,
                 "webhook": None
             }
+            
+            logger.debug(f"Sending sync request to RunPod: {url}")
+            
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            if response.status_code == 200:
+                result = response.json()
+                logger.info(f"RunPod sync request successful")
+                return result
+            else:
+                error_text = response.text
+                logger.error(f"RunPod sync request failed with status {response.status_code}: {error_text}")
+                raise Exception(f"RunPod request failed with status {response.status_code}: {error_text}")
+                
+        except Exception as e:
+            logger.error(f"RunPod sync request failed: {e}")
+            raise
+    
+    async def run_sync(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Asynchronous request to RunPod"""
+        try:
+            url = f"{self.base_url}/{self.endpoint_id}/runsync"
+            
+            payload = {
+                "input": request_data,
+                "webhook": None
+            }
+            
+            logger.debug(f"Sending async request to RunPod: {url}")
             
             async with aiohttp.ClientSession() as session:
                 async with session.post(
@@ -235,83 +389,19 @@ class RunPodClient:
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
+                        logger.info(f"RunPod async request successful")
                         return result
                     else:
                         error_text = await response.text()
+                        logger.error(f"RunPod async request failed with status {response.status}: {error_text}")
                         raise Exception(f"RunPod request failed with status {response.status}: {error_text}")
-                        
-        except Exception as e:
-            logger.error(f"RunPod sync request failed: {e}")
-            raise
-    
-    async def run_async(self, request_data: Dict[str, Any]) -> str:
-        """Run asynchronous request on RunPod"""
-        try:
-            url = f"{self.base_url}/{self.endpoint_id}/run"
-            
-            payload = {
-                "input": request_data,
-                "webhook": None
-            }
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url,
-                    json=payload,
-                    headers=self._get_headers(),
-                    timeout=30
-                ) as response:
-                    if response.status == 200:
-                        result = await response.json()
-                        return result.get("id")
-                    else:
-                        error_text = await response.text()
-                        raise Exception(f"RunPod async request failed with status {response.status}: {error_text}")
                         
         except Exception as e:
             logger.error(f"RunPod async request failed: {e}")
             raise
-    
-    async def get_job_status(self, job_id: str) -> Dict[str, Any]:
-        """Get status of a RunPod job"""
-        try:
-            url = f"{self.base_url}/{self.endpoint_id}/status/{job_id}"
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    url,
-                    headers=self._get_headers(),
-                    timeout=10
-                ) as response:
-                    if response.status == 200:
-                        return await response.json()
-                    else:
-                        error_text = await response.text()
-                        raise Exception(f"Status check failed with status {response.status}: {error_text}")
-                        
-        except Exception as e:
-            logger.error(f"RunPod status check failed: {e}")
-            raise
-    
-    async def cancel_job(self, job_id: str) -> bool:
-        """Cancel a RunPod job"""
-        try:
-            url = f"{self.base_url}/{self.endpoint_id}/cancel/{job_id}"
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url,
-                    headers=self._get_headers(),
-                    timeout=10
-                ) as response:
-                    return response.status == 200
-                    
-        except Exception as e:
-            logger.error(f"RunPod job cancellation failed: {e}")
-            return False
 
 class BackendManager:
-    """Manages multiple backend clients"""
+    """Manages multiple backend clients with proper sync/async handling"""
     
     def __init__(self):
         # Get gradio configuration
@@ -325,82 +415,27 @@ class BackendManager:
         # Initialize clients based on configuration
         if self.backends_config.get('litserve', {}).get('enabled', False):
             self.litserve_client = LitServeClient(self.backends_config['litserve'])
+            logger.info("LitServe client initialized")
         
         if self.backends_config.get('runpod', {}).get('enabled', False):
             self.runpod_client = RunPodClient(self.backends_config['runpod'])
+            logger.info("RunPod client initialized")
         
         # Job management
         self.jobs: Dict[str, Job] = {}
-        self.job_cleanup_interval = self.backends_config.get('runpod', {}).get('job_management', {}).get('cleanup_interval', 3600)
+        self.job_cleanup_interval = self.backends_config.get('job_management', {}).get('cleanup_interval', 3600)
         
-        # Start background tasks
-        self._start_background_tasks()
-    
-    def _start_background_tasks(self):
-        """Start background tasks for health checks and job cleanup"""
-        # Only start background tasks if we're in an async context
-        try:
-            loop = asyncio.get_running_loop()
-            # We're in an async context, create tasks
-            
-            # Health check intervals
-            if self.litserve_client:
-                litserve_interval = self.backends_config.get('litserve', {}).get('health_check', {}).get('interval', 30)
-                loop.create_task(self._periodic_health_check(BackendType.LITSERVE, litserve_interval))
-            
-            # Job cleanup task
-            loop.create_task(self._periodic_job_cleanup())
-            
-        except RuntimeError:
-            # No event loop running, skip background tasks for now
-            logger.debug("No event loop running, skipping background tasks initialization")
-            pass
-    
-    async def _periodic_health_check(self, backend_type: BackendType, interval: int):
-        """Periodic health check for backends"""
-        while True:
-            try:
-                if backend_type == BackendType.LITSERVE and self.litserve_client:
-                    await self.litserve_client.health_check()
-                elif backend_type == BackendType.RUNPOD and self.runpod_client:
-                    await self.runpod_client.health_check()
-                
-                await asyncio.sleep(interval)
-            except Exception as e:
-                logger.error(f"Error in periodic health check for {backend_type}: {e}")
-                await asyncio.sleep(interval)
-    
-    async def _periodic_job_cleanup(self):
-        """Periodic cleanup of old jobs"""
-        while True:
-            try:
-                await asyncio.sleep(self.job_cleanup_interval)
-                await self.cleanup_old_jobs()
-            except Exception as e:
-                logger.error(f"Error in job cleanup: {e}")
-    
-    def start_background_tasks_if_needed(self):
-        """Start background tasks if not already started"""
-        try:
-            loop = asyncio.get_running_loop()
-            
-            # Health check intervals
-            if self.litserve_client:
-                litserve_interval = self.backends_config.get('litserve', {}).get('health_check', {}).get('interval', 30)
-                loop.create_task(self._periodic_health_check(BackendType.LITSERVE, litserve_interval))
-            
-            # Job cleanup task
-            loop.create_task(self._periodic_job_cleanup())
-            
-            logger.info("Background tasks started")
-            
-        except RuntimeError:
-            # No event loop running
-            logger.debug("No event loop running, background tasks not started")
-            pass
+        # Thread pool for sync operations
+        self.executor = ThreadPoolExecutor(max_workers=4)
+        
+        # Background task management
+        self.background_tasks_started = False
+        self.background_task_lock = threading.Lock()
+        
+        logger.info("Backend manager initialized")
     
     def sync_submit_job(self, backend_type: BackendType, request_data: Dict[str, Any]) -> str:
-        """Submit a job synchronously (for use in sync contexts)"""
+        """Submit a job synchronously - FIXED VERSION"""
         job_id = str(uuid.uuid4())
         
         # Create job
@@ -415,91 +450,31 @@ class BackendManager:
         
         self.jobs[job_id] = job
         
-        # Try to start processing if event loop is available
-        try:
-            loop = asyncio.get_running_loop()
-            loop.create_task(self._process_job(job))
-        except RuntimeError:
-            # No event loop, job will be processed later
-            logger.debug(f"Job {job_id} queued, no event loop for immediate processing")
+        logger.info(f"Job {job_id} created for backend {backend_type.value}")
         
-        return job_id
-    
-    async def cleanup_old_jobs(self):
-        """Clean up old completed jobs"""
-        cutoff_time = datetime.now() - timedelta(seconds=self.job_cleanup_interval)
-        jobs_to_remove = []
-        
-        for job_id, job in self.jobs.items():
-            if job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
-                if job.updated_at < cutoff_time:
-                    jobs_to_remove.append(job_id)
-        
-        for job_id in jobs_to_remove:
-            del self.jobs[job_id]
-            
-        if jobs_to_remove:
-            logger.info(f"Cleaned up {len(jobs_to_remove)} old jobs")
-    
-    def get_available_backends(self) -> List[Dict[str, Any]]:
-        """Get list of available backends"""
-        backends = []
-        
-        if self.litserve_client:
-            backends.append({
-                "type": BackendType.LITSERVE.value,
-                "name": self.backends_config['litserve'].get('name', 'LitServe'),
-                "description": self.backends_config['litserve'].get('description', 'Live server'),
-                "enabled": True,
-                "health_status": self.litserve_client.health_status.to_dict()
-            })
-        
-        if self.runpod_client:
-            backends.append({
-                "type": BackendType.RUNPOD.value,
-                "name": self.backends_config['runpod'].get('name', 'RunPod'),
-                "description": self.backends_config['runpod'].get('description', 'Serverless'),
-                "enabled": True,
-                "health_status": self.runpod_client.health_status.to_dict()
-            })
-        
-        return backends
-    
-    async def submit_job(self, backend_type: BackendType, request_data: Dict[str, Any]) -> str:
-        """Submit a job to the specified backend"""
-        job_id = str(uuid.uuid4())
-        
-        # Create job
-        job = Job(
-            id=job_id,
-            backend_type=backend_type,
-            status=JobStatus.PENDING,
-            created_at=datetime.now(),
-            updated_at=datetime.now(),
-            request_data=request_data
-        )
-        
-        self.jobs[job_id] = job
-        
-        # Start processing
-        asyncio.create_task(self._process_job(job))
-        
-        return job_id
-    
-    async def _process_job(self, job: Job):
-        """Process a job"""
+        # Process job synchronously
         try:
             job.status = JobStatus.RUNNING
             job.updated_at = datetime.now()
             
             start_time = time.time()
             
-            if job.backend_type == BackendType.LITSERVE:
-                result = await self.litserve_client.predict(job.request_data)
-            elif job.backend_type == BackendType.RUNPOD:
-                result = await self.runpod_client.run_sync(job.request_data)
+            if backend_type == BackendType.LITSERVE:
+                if not self.litserve_client:
+                    raise Exception("LitServe client not initialized")
+                
+                logger.info(f"Processing job {job_id} with LitServe")
+                result = self.litserve_client.sync_predict(request_data)
+                
+            elif backend_type == BackendType.RUNPOD:
+                if not self.runpod_client:
+                    raise Exception("RunPod client not initialized")
+                
+                logger.info(f"Processing job {job_id} with RunPod")
+                result = self.runpod_client.sync_run_sync(request_data)
+                
             else:
-                raise ValueError(f"Unknown backend type: {job.backend_type}")
+                raise ValueError(f"Unknown backend type: {backend_type}")
             
             execution_time = time.time() - start_time
             
@@ -508,14 +483,41 @@ class BackendManager:
             job.execution_time = execution_time
             job.updated_at = datetime.now()
             
-            logger.info(f"Job {job.id} completed in {execution_time:.2f}s")
+            logger.info(f"Job {job_id} completed successfully in {execution_time:.2f}s")
             
         except Exception as e:
             job.status = JobStatus.FAILED
             job.error_message = str(e)
             job.updated_at = datetime.now()
             
-            logger.error(f"Job {job.id} failed: {e}")
+            logger.error(f"Job {job_id} failed: {e}")
+            raise
+        
+        return job_id
+    
+    def get_available_backends(self) -> List[Dict[str, Any]]:
+        """Get list of available backends"""
+        backends = []
+        
+        if self.litserve_client:
+            backends.append({
+                "type": BackendType.LITSERVE.value,
+                "name": self.backends_config.get('litserve', {}).get('name', 'LitServe'),
+                "description": self.backends_config.get('litserve', {}).get('description', 'Live server'),
+                "enabled": True,
+                "health_status": self.litserve_client.health_status.to_dict()
+            })
+        
+        if self.runpod_client:
+            backends.append({
+                "type": BackendType.RUNPOD.value,
+                "name": self.backends_config.get('runpod', {}).get('name', 'RunPod'),
+                "description": self.backends_config.get('runpod', {}).get('description', 'Serverless'),
+                "enabled": True,
+                "health_status": self.runpod_client.health_status.to_dict()
+            })
+        
+        return backends
     
     def get_job(self, job_id: str) -> Optional[Job]:
         """Get job by ID"""
@@ -533,7 +535,23 @@ class BackendManager:
         
         return jobs
     
-    async def cancel_job(self, job_id: str) -> bool:
+    def get_backend_health(self) -> Dict[str, Any]:
+        """Get health status of all backends"""
+        health_status = {}
+        
+        if self.litserve_client:
+            # Perform sync health check
+            self.litserve_client.sync_health_check()
+            health_status["litserve"] = self.litserve_client.health_status.to_dict()
+        
+        if self.runpod_client:
+            # Perform sync health check
+            self.runpod_client.sync_health_check()
+            health_status["runpod"] = self.runpod_client.health_status.to_dict()
+        
+        return health_status
+    
+    def cancel_job(self, job_id: str) -> bool:
         """Cancel a job"""
         job = self.jobs.get(job_id)
         if not job:
@@ -545,25 +563,8 @@ class BackendManager:
         job.status = JobStatus.CANCELLED
         job.updated_at = datetime.now()
         
-        # If it's a RunPod job, try to cancel it on the server
-        if job.backend_type == BackendType.RUNPOD and self.runpod_client:
-            # This would require storing the RunPod job ID
-            pass
-        
         logger.info(f"Job {job_id} cancelled")
         return True
-    
-    def get_backend_health(self) -> Dict[str, Any]:
-        """Get health status of all backends"""
-        health_status = {}
-        
-        if self.litserve_client:
-            health_status["litserve"] = self.litserve_client.health_status.to_dict()
-        
-        if self.runpod_client:
-            health_status["runpod"] = self.runpod_client.health_status.to_dict()
-        
-        return health_status
 
 # Global backend manager instance
 backend_manager = BackendManager()
