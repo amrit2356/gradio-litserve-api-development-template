@@ -10,33 +10,26 @@
 [![RunPod](https://img.shields.io/badge/RunPod-Serverless-purple.svg)](https://runpod.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 🚀 **Powered By**
-
-<div align="center" style="display: flex; justify-content: center; align-items: center; flex-wrap: nowrap; gap: 20px;">
+<div align="center" style="display: flex; justify-content: center; align-items: center; flex-wrap: nowrap; gap: 40px; padding: 20px 0;">
   <a href="https://pytorch.org/">
-    <img src="https://pytorch.org/assets/images/pytorch-logo.png" alt="PyTorch" style="width: 60px; height: 60px; object-fit: contain; margin: 0 20px;">
+    <img src="https://pytorch.org/assets/images/pytorch-logo.png" alt="PyTorch" style="width: 120px; height: 120px; object-fit: contain;">
   </a>
   <a href="https://docs.ultralytics.com/">
-    <img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" alt="Ultralytics" style="width: 60px; height: 60px; object-fit: contain; margin: 0 20px;">
+    <img src="https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics_Logotype_Original.svg" alt="Ultralytics" style="width: 120px; height: 120px; object-fit: contain;">
   </a>
   <a href="https://gradio.app/">
-    <img src="https://www.gradio.app/_app/immutable/assets/gradio.CHB5adID.svg" alt="Gradio" style="width: 60px; height: 60px; object-fit: contain; margin: 0 20px;">
+    <img src="https://www.gradio.app/_app/immutable/assets/gradio.CHB5adID.svg" alt="Gradio" style="width: 120px; height: 120px; object-fit: contain;">
   </a>
   <a href="https://github.com/Lightning-AI/litserve">
-    <img src="https://lightning.ai/static/media/logo-with-text-dark.bdcfdf86bccb9812ed1d3ec873e9e771.svg" alt="Lightning AI" style="width: 60px; height: 60px; object-fit: contain; margin: 0 20px;">
+    <img src="https://lightning.ai/static/media/logo-with-text-dark.bdcfdf86bccb9812ed1d3ec873e9e771.svg" alt="Lightning AI" style="width: 120px; height: 120px; object-fit: contain;">
   </a>
   <a href="https://runpod.io/">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://mintlify.s3.us-west-1.amazonaws.com/runpod-b18f5ded/logo/runpod-logo-white.svg">
-      <img src="https://mintlify.s3.us-west-1.amazonaws.com/runpod-b18f5ded/logo/runpod-logo-black.svg" alt="RunPod" style="width: 60px; height: 60px; object-fit: contain; margin: 0 20px;">
+      <img src="https://mintlify.s3.us-west-1.amazonaws.com/runpod-b18f5ded/logo/runpod-logo-black.svg" alt="RunPod" style="width: 120px; height: 120px; object-fit: contain;">
     </picture>
   </a>
 </div>
-
-<br>
-
-*Built with industry-leading frameworks for production-ready ML deployment*
-
 </div>
 
 ## 📋 Table of Contents
