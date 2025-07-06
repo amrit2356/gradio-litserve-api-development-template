@@ -9,6 +9,8 @@
 [![RunPod](https://img.shields.io/badge/RunPod-Serverless-purple.svg)](https://runpod.io)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
+## Aripra is studying GIT.
+
 ## 📋 Table of Contents
 
 - [🎯 Purpose](#-purpose)
